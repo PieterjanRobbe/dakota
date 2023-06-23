@@ -6943,7 +6943,8 @@ static bool
 	MP_(useTargetVarianceOptimizationFlag),
 	MP_(vbdFlag),
 	MP_(volQualityFlag),
-	MP_(wilksFlag);
+	MP_(wilksFlag),
+  MP_(randomizeFlag);
 
 static short
 	MP_(polynomialOrder);
@@ -7283,6 +7284,7 @@ static Method_mp_utype
         MP2s(pstudyFileFormat,TABULAR_ANNOTATED),
 	MP2s(sampleType,SUBMETHOD_LHS),
 	MP2s(sampleType,SUBMETHOD_RANDOM),
+	MP2s(sampleType,SUBMETHOD_RANK_1_LATTICE),
 	MP2s(subMethod,SUBMETHOD_AMV_PLUS_U),
 	MP2s(subMethod,SUBMETHOD_AMV_PLUS_X),
 	MP2s(subMethod,SUBMETHOD_AMV_U),

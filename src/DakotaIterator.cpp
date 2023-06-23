@@ -135,6 +135,8 @@
 #include "ResultsManager.hpp"
 #include "EvaluationStore.hpp"
 #include "NonDWASABIBayesCalibration.hpp"
+#include "NonDLowDiscrepancySampling.hpp"
+#include "Rank1Lattice.hpp"
 
 #include <boost/bimap.hpp>
 #include <boost/assign.hpp>
@@ -516,7 +518,12 @@ Iterator::get_iterator(ProblemDescDB& problem_db, Model& model)
 //    return std::make_shared<NonDMUQBayesCalibration>(problem_db, model);break;
 //#endif
   case RANDOM_SAMPLING:
-    return std::make_shared<NonDLHSSampling>(problem_db, model); break;
+    switch (probDescDB.get_ushort("method.sample_type")) {
+    case SUBMETHOD_RANK_1_LATTICE:
+      return std::make_shared<NonDLowDiscrepancySampling<Rank1Lattice>>(problem_db, model); break;
+    default:
+      return std::make_shared<NonDLHSSampling>(problem_db, model); break;
+    }
   case MULTILEVEL_SAMPLING:
     return std::make_shared<NonDMultilevelSampling>(problem_db, model);   break;
   case MULTIFIDELITY_SAMPLING:
@@ -932,6 +939,7 @@ static UShortStrBimap submethod_map =
   (SUBMETHOD_SEQUENTIAL,        "sequential")
   (SUBMETHOD_LHS,               "lhs")
   (SUBMETHOD_RANDOM,            "random")
+  (SUBMETHOD_RANK_1_LATTICE,    "rank_1_lattice")
   (SUBMETHOD_BOX_BEHNKEN,       "box_behnken")
   (SUBMETHOD_CENTRAL_COMPOSITE, "central_composite")
   (SUBMETHOD_GRID,              "grid")

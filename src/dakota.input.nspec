@@ -2692,6 +2692,8 @@ KEYWORD method {N_mdm3(start,0,stop)}
       incremental_lhs {N_mdm(utype,sampleType_SUBMETHOD_LHS)}
       |
       incremental_random {N_mdm(utype,sampleType_SUBMETHOD_RANDOM)}
+      |
+      rank_1_lattice {N_mdm(utype,sampleType_SUBMETHOD_RANK_1_LATTICE)}
      ]
     [ refinement_samples INTEGERLIST {N_mdm(ivec,refineSamples)} ]
     [ d_optimal {N_mdm(true,dOptimal)}
@@ -2700,6 +2702,9 @@ KEYWORD method {N_mdm3(start,0,stop)}
         |
         leja_oversample_ratio REAL {N_mdm(Real,collocationRatio)}
        ]
+     ]
+    [ low_discrepancy {0}
+      [ randomize {N_mdm(true,randomizeFlag)} ]
      ]
     [ variance_based_decomp {N_mdm(true,vbdFlag)}
       [ drop_tolerance REAL {N_mdm(Real,vbdDropTolerance)} ]

@@ -881,6 +881,7 @@
 	         <keyword  id="random" name="random" code="{N_mdm(utype,sampleType_SUBMETHOD_RANDOM)}" label="random"   />
 	         <keyword  id="incremental_lhs" name="incremental_lhs" code="{N_mdm(utype,sampleType_SUBMETHOD_LHS)}" label="incremental_lhs"   default="no sample reuse in coefficient estimation" />
 	         <keyword  id="incremental_random" name="incremental_random" code="{N_mdm(utype,sampleType_SUBMETHOD_RANDOM)}" label="incremental_random"   />
+           <keyword  id="rank_1_lattice" name="rank_1_lattice" code="{N_mdm(utype,sampleType_SUBMETHOD_RANK_1_LATTICE)}" label="rank-1 lattice"   />
 	       </oneOf>
 	     </keyword>
 	     ' >
@@ -2978,6 +2979,10 @@
 	      </oneOf>
 	    </optional>
 	  </keyword>
+    <keyword id="low_discrepancy" name="low_discrepancy" code="{0}" label="Low-discrepancy samples" minOccurs="0" default="No low-discrepancy sampling">
+        <keyword id="randomize" name="randomize" code="{N_mdm(true,randomizeFlag)}" label="randomize" minOccurs="0">
+        </keyword>
+    </keyword>
 	  <keyword  id="variance_based_decomp2" name="variance_based_decomp" code="{N_mdm(true,vbdFlag)}" label="variance_based_decomp"  minOccurs="0" default="no variance-based decomposition" >
 	    <keyword  id="drop_tolerance2" name="drop_tolerance" code="{N_mdm(Real,vbdDropTolerance)}" label="drop_tolerance"  minOccurs="0" default="All VBD indices displayed" >
 	      <param type="REAL" />

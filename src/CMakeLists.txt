@@ -505,8 +505,8 @@ set(iterator_src DakotaIterator.cpp DakotaAnalyzer.cpp DakotaPStudyDACE.cpp
     NonDExpansion.cpp NonDPolynomialChaos.cpp NonDStochCollocation.cpp
     NonDMultilevelPolynomialChaos.cpp NonDMultilevelStochCollocation.cpp
     NonDSurrogateExpansion.cpp NonDCalibration.cpp NonDBayesCalibration.cpp
-    NonDWASABIBayesCalibration.cpp NonDSampling.cpp NonDLatticeSampling.cpp
-    NonDLHSSampling.cpp NonDEnsembleSampling.cpp NonDHierarchSampling.cpp
+    NonDWASABIBayesCalibration.cpp NonDSampling.cpp NonDLHSSampling.cpp 
+    NonDEnsembleSampling.cpp NonDHierarchSampling.cpp
     NonDMultilevelSampling.cpp NonDMultilevControlVarSampling.cpp
     NonDNonHierarchSampling.cpp NonDACVSampling.cpp NonDGenACVSampling.cpp
     NonDMultifidelitySampling.cpp NonDAdaptImpSampling.cpp
@@ -518,6 +518,7 @@ set(iterator_src DakotaIterator.cpp DakotaAnalyzer.cpp DakotaPStudyDACE.cpp
     SurrBasedGlobalMinimizer.cpp EffGlobalMinimizer.cpp OptDartsOptimizer.cpp
     MetaIterator.cpp ConcurrentMetaIterator.cpp SeqHybridMetaIterator.cpp
     EmbedHybridMetaIterator.cpp CollabHybridMetaIterator.cpp
+    Rank1Lattice.cpp
 )
 set(Dakota_src_fortran lawson_hanson1.f)
 if(DAKOTA_F90)

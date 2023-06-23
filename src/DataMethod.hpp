@@ -96,6 +96,7 @@ enum { SUBMETHOD_DEFAULT=0, // no specification
        SUBMETHOD_COLLABORATIVE,   SUBMETHOD_EMBEDDED,   SUBMETHOD_SEQUENTIAL,
        // Sampling and DOE types:
        SUBMETHOD_LHS,             SUBMETHOD_RANDOM,
+       SUBMETHOD_RANK_1_LATTICE,
        SUBMETHOD_BOX_BEHNKEN,     SUBMETHOD_CENTRAL_COMPOSITE,
        SUBMETHOD_GRID,            SUBMETHOD_OA_LHS,     SUBMETHOD_OAS,
        // MFMC and ACV numerical solutions:
@@ -879,6 +880,9 @@ public:
   Real wilksConfidenceLevel;
   /// Wilks sided interval type
   short wilksSidedInterval;
+
+  /// Flag to indicate randomization of low-discrepancy sequence
+  bool randomizeFlag;
 
   /// flag indicating the calculation/output of standardized regression coefficients
   bool stdRegressionCoeffs;

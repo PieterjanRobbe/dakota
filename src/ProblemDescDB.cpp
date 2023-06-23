@@ -2691,7 +2691,8 @@ bool ProblemDescDB::get_bool(const String& entry_name) const
       {"std_regression_coeffs", P_MET stdRegressionCoeffs},
       {"tolerance_intervals", P_MET toleranceIntervalsFlag},
       {"variance_based_decomp", P_MET vbdFlag},
-      {"wilks", P_MET wilksFlag}
+      {"wilks", P_MET wilksFlag},
+      {"randomize", P_MET randomizeFlag}
     },
     { /* model */
       {"active_subspace.build_surrogate", P_MOD subspaceBuildSurrogate},
