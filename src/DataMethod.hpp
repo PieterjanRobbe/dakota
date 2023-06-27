@@ -883,6 +883,16 @@ public:
 
   /// Flag to indicate randomization of low-discrepancy sequence
   bool randomizeFlag;
+  /// Maximum dimension of low-discrepancy generator
+  int d_max;
+  /// (log2 of) maximum number of points off low-discrepancy generator
+  int m_max;
+  /// Generating vector of the rank-1 lattice rule
+  IntVector generatingVector;
+  /// Name of file with generating vector
+  str generatingVectorFileName;
+  /// Predefined generating vector file
+  str generatingVectorPredefined;
 
   /// flag indicating the calculation/output of standardized regression coefficients
   bool stdRegressionCoeffs;

@@ -21,8 +21,19 @@ namespace Dakota {
 
 /// Constructor
 Rank1Lattice::Rank1Lattice(ProblemDescDB& problem_db) :
-  randomize(problem_db.get_bool("method.randomize"))
+  randomize(problem_db.get_bool("method.randomize")),
+  d_max(problem_db.get_bool("method.d_max")),
+  m_max(problem_db.get_bool("method.m_max")),
 {
+  /// d_max and m_max are 0 if not specified
+  /// in that case we need to deduce it from the lattice rule
+  /// so we enforce that d_max and  m_max are not given (0) and use a pre-defined lattice rule
+  /// or, when the generating vector is provided (either as direct input or when read ffrom file)
+  /// then m_max and d_max need to bbe specified
+  /// for specifying generatin vectors:
+  /// - "generating_vector inline" inline -> m/d required
+  /// - "generating_vector predefined xxx" choose from predefined (using enum?)-> m/d implied
+  /// - "generating_vector file"  read from file -> m/d required
   Cout << "\n\n\n   ==> Rank1LatticeRule constructor has been called!" << std::endl;
   Cout << "        the value of randomize is " << randomize << std::endl;
 }
@@ -33,13 +44,41 @@ Rank1Lattice::~Rank1Lattice()
 
 }
 
-void Rank1Lattice::get_points(const size_t nPoints, RealMatrix& points)
+/// Generate rank-1 lattice points between `n_min` and `n_max` 
+/// This function will store the points in-place in the matrix `points`
+/// Each column of `points` contains a point
+void Rank1Lattice::get_points(
+  const size_t n_min,
+  const size_t n_max, 
+  RealMatrix& points
+)
 {
+  auto max_points = (1 << m_max)
+  if (n_max > max_points)
+  {
+    Cerr << "\nError: request number of samples " << n_max
+      << " is larger than the maximum allowed number of points "
+      << max_points << "." << std::endl;
+    abort_handler(METHOD_ERROR);
+  }
+
+  switch (order)
+  {
+    case NATURAL:
+    {
+      break;
+    }
+    case GREY:
+    {
+      break;
+    }
+  }
+
+
+
   Cout << "\n\n\n Hello from get_points in Rank1Lattice.cpp \n\n\n";
   Cout << "points has shape " << points.numRows() << "x" << points.numCols() << std::endl; // d x n
   Cout << "dimension of this rank-1 lattice rule is " << get_dimension() << std::endl;
-
-    
 
 }
 

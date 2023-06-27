@@ -42,11 +42,11 @@ public:
   /// Destructor
   ~Rank1Lattice();
 
-  /// Get points from this rank-1 lattice rule
-  void get_points(const size_t nPoints, RealMatrix& points);
-
   /// Set dimension of this rank-1 lattice rule
   void set_dimension(size_t new_dimension);
+
+  /// Generate rank-1 lattice points between `n_min` and `n_max` 
+  void get_points(const size_t n_min, const size_t n_max, RealMatrix& points);
 
 protected:
 
@@ -77,7 +77,7 @@ private:
   /// Maximum dimension of this rank-1 lattice rule
   int d_max;
 
-  /// (log2 of the) maximum number of points of this rank-1 lattice rule
+  /// 2^m_max is the maximum number of points of this rank-1 lattice rule
   int m_max;
 
 };

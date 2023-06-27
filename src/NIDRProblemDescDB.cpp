@@ -6611,7 +6611,8 @@ static IntVector
 	MP_(refineSamples),
 	MP_(sequenceLeap),
 	MP_(sequenceStart),
-	MP_(stepsPerVariable);
+	MP_(stepsPerVariable),
+  MP_(generatingVector);
 
 static Method_mp_ilit2
 	MP3(replacementType,numberRetained,chc),
@@ -6992,7 +6993,9 @@ static int
 	MP_(searchSchemeSize),
 	MP_(subSamplingPeriod),
 	MP_(totalPatternSize),
-	MP_(verifyLevel);
+	MP_(verifyLevel),
+  MP_(maxDimension),
+  MP_(maxPoints);
 
 static size_t
 	MP_(collocationPoints),
@@ -7498,7 +7501,9 @@ static String
 	MP_(solutionLevelControl),
 	MP_(subMethodPointer),
 	MP_(truthModelPointer),
-	MP_(variablesPointer);
+	MP_(variablesPointer),
+	MP_(generatingVectorFileName);
+  MP_(generatingVectorPredefined);
 
 static StringArray
         MP_(diagMetrics),
