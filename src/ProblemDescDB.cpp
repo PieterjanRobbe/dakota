@@ -1561,7 +1561,8 @@ const IntVector& ProblemDescDB::get_iv(const String& entry_name) const
       {"fsu_quasi_mc.sequenceLeap", P_MET sequenceLeap},
       {"fsu_quasi_mc.sequenceStart", P_MET sequenceStart},
       {"nond.refinement_samples", P_MET refineSamples},
-      {"parameter_study.steps_per_variable", P_MET stepsPerVariable}
+      {"parameter_study.steps_per_variable", P_MET stepsPerVariable},
+      {"generating_vector.inline", P_MET generatingVector}
     },
     { /* model */
       {"refinement_samples", P_MOD refineSamples}
@@ -2095,8 +2096,7 @@ const String& ProblemDescDB::get_string(const String& entry_name) const
       {"sub_method_pointer", P_MET subMethodPointer},
       {"sub_model_pointer", P_MET subModelPointer},
       {"trial_type", P_MET trialType},
-      {"generating_vector_file_name", P_MET generatingVectorFileName},
-      {"generating_vector_predefined", P_MET generatingVectorPredefined}
+      {"generating_vector.file", P_MET generatingVectorFileName}
     },
     { /* model */
       {"advanced_options_file", P_MOD advancedOptionsFilename},
@@ -2295,7 +2295,9 @@ int ProblemDescDB::get_int(const String& entry_name) const
       {"random_seed", P_MET randomSeed},
       {"samples", P_MET numSamples},
       {"sub_sampling_period", P_MET subSamplingPeriod},
-      {"symbols", P_MET numSymbols}
+      {"symbols", P_MET numSymbols},
+      {"d_max", P_MET maxDimension},
+      {"m_max", P_MET log2MaxPoints}
     },
     { /* model */
       {"active_subspace.bootstrap_samples", P_MOD numReplicates},
@@ -2543,10 +2545,7 @@ size_t ProblemDescDB::get_sizet(const String& entry_name) const
       {"nond.max_solver_iterations", P_MET maxSolverIterations},
       {"num_candidate_designs", P_MET numCandidateDesigns},
       {"num_candidates", P_MET numCandidates},
-      {"num_prediction_configs", P_MET numPredConfigs},
-      {"d_max", P_MET maxDimension},
-      {"m_max", P_MET maxPoints},
-      {"generating_vector_inline", P_MET generatingVector}
+      {"num_prediction_configs", P_MET numPredConfigs}
     },
     { /* model */
       {"c3function_train.collocation_points", P_MOD collocationPoints},
@@ -2558,7 +2557,7 @@ size_t ProblemDescDB::get_sizet(const String& entry_name) const
       //{"c3function_train.verbosity", P_MOD verbosity},
       {"max_function_evals", P_MOD maxFunctionEvals},
       {"max_iterations", P_MOD maxIterations},
-      {"max_solver_iterations", P_MOD maxSolverIterations}//,
+      {"max_solver_iterations", P_MOD maxSolverIterations}
     },
     { /* variables */
       {"beta_uncertain", P_VAR numBetaUncVars},
@@ -2697,7 +2696,9 @@ bool ProblemDescDB::get_bool(const String& entry_name) const
       {"tolerance_intervals", P_MET toleranceIntervalsFlag},
       {"variance_based_decomp", P_MET vbdFlag},
       {"wilks", P_MET wilksFlag},
-      {"randomize", P_MET randomizeFlag}
+      {"randomize", P_MET randomizeFlag},
+      {"generating_vector.predefined.kuo_d3600_m20", P_MET kuo_d3600_m20},
+      {"generating_vector.predefined.cools_kuo_nuyens_d250_m20", P_MET cools_kuo_nuyens_d250_m20}
     },
     { /* model */
       {"active_subspace.build_surrogate", P_MOD subspaceBuildSurrogate},
@@ -2885,7 +2886,9 @@ void ProblemDescDB::set(const String& entry_name, const IntVector& iv)
   IntVector& rep_iv = get<IntVector>
   ( "set(IntVector&)",
     { /* environment */ },
-    { /* method */ },
+    { /* method */
+      {"generating_vector.inline", P_MET generatingVector}
+    },
     { /* model */ },
     { /* variables */
       {"binomial_uncertain.num_trials", P_VAR binomialUncNumTrials},

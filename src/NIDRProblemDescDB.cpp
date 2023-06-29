@@ -6879,7 +6879,8 @@ static String
 	MP_(pstudyFilename),
 	MP_(subMethodName),
         MP_(subMethodPointer),
-        MP_(subModelPointer);
+        MP_(subModelPointer),
+	MP_(generatingVectorFileName);
 
 static StringArray
 	MP_(hybridMethodNames),
@@ -6945,7 +6946,9 @@ static bool
 	MP_(vbdFlag),
 	MP_(volQualityFlag),
 	MP_(wilksFlag),
-  MP_(randomizeFlag);
+  MP_(randomizeFlag),
+  MP_(kuo_d3600_m20),
+  MP_(cools_kuo_nuyens_d250_m20);
 
 static short
 	MP_(polynomialOrder);
@@ -6995,7 +6998,7 @@ static int
 	MP_(totalPatternSize),
 	MP_(verifyLevel),
   MP_(maxDimension),
-  MP_(maxPoints);
+  MP_(log2MaxPoints);
 
 static size_t
 	MP_(collocationPoints),
@@ -7501,9 +7504,7 @@ static String
 	MP_(solutionLevelControl),
 	MP_(subMethodPointer),
 	MP_(truthModelPointer),
-	MP_(variablesPointer),
-	MP_(generatingVectorFileName);
-  MP_(generatingVectorPredefined);
+	MP_(variablesPointer);
 
 static StringArray
         MP_(diagMetrics),

@@ -2705,6 +2705,19 @@ KEYWORD method {N_mdm3(start,0,stop)}
      ]
     [ low_discrepancy {0}
       [ randomize {N_mdm(true,randomizeFlag)} ]
+      [ d_max INTEGER >= 0 {N_mdm(int,maxDimension)} ]
+      [ m_max INTEGER >= 0 {N_mdm(int,log2MaxPoints)} ]
+      [ generating_vector {0}
+        inline INTEGERLIST {N_mdm(ivec,generatingVector)}
+        |
+        file STRING {N_mdm(str,generatingVectorFileName)}
+        |
+        ( predefined {0}
+          kuo_d3600_m20 {N_mdm(true,kuo_d3600_m20)}
+          |
+          cools_kuo_nuyens_d250_m20 {N_mdm(true,cools_kuo_nuyens_d250_m20)}
+         )
+       ]
      ]
     [ variance_based_decomp {N_mdm(true,vbdFlag)}
       [ drop_tolerance REAL {N_mdm(Real,vbdDropTolerance)} ]

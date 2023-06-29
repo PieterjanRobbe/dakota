@@ -41,10 +41,10 @@ public:
   NonDLowDiscrepancySampling(ProblemDescDB& problem_db, Model& model) : NonDLHSSampling(problem_db, model), sequence(new T(problem_db))
   {
 
-  };
+  }
 
   /// destructor
-  ~NonDLowDiscrepancySampling() {};
+  ~NonDLowDiscrepancySampling() {}
 
 protected:
 
@@ -59,7 +59,7 @@ protected:
   )
   {
     get_parameter_sets(model, numSamples, allSamples);
-  };
+  }
 
   /// Same as above, but store the lattice points in the given matrix
   void get_parameter_sets(
@@ -69,7 +69,7 @@ protected:
   )
   {
     get_parameter_sets(model, numSamples, allSamples, true);
-  };
+  }
                           
   /// Same as above, but allow verbose outputs
   void get_parameter_sets(
@@ -96,6 +96,8 @@ protected:
 
     sequence->set_dimension(model.cv());
 
+    Cout <<  "seed is " << sequence->get_seed() << std::endl;
+
     sequence->get_points(num_samples, sample_matrix);
 
 
@@ -110,7 +112,7 @@ protected:
 
     // Scale points from [0, 1) to the lower and upper bounds
     scale(sample_matrix, lower, upper);
-  };
+  }
 
   /// Generate a set of rank-1 lattice points using the given lower and upper
   /// bounds
@@ -122,8 +124,8 @@ protected:
     Cout << "\n\n\n ERROR: This function is not implemented yet \n\n\n"
       << std::endl;
     abort_handler(METHOD_ERROR);
-  };
-                          
+  }
+
   /// Generate a set of normally-distributed points by mapping the rank-1
   /// lattice points using the inverse normal cdf
   void get_parameter_sets(
@@ -137,7 +139,7 @@ protected:
     Cout << "\n\n\n ERROR: This function is not implemented yet \n\n\n"
       << std::endl;
     abort_handler(METHOD_ERROR);
-  };
+  }
 
   //
   //- Heading: Member functions
@@ -162,7 +164,7 @@ private:
       for (size_t row=0; row < sample_matrix.numRows(); row++)
         sample_matrix[col][row] = sample_matrix[col][row]*(upper_bnds[row] - lower_bnds[row]) + lower_bnds[row];
     }
-  };
+  }
 
 };
 

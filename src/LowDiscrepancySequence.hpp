@@ -17,6 +17,7 @@
 #define LOW_DISCREPANCY_SEQUENCE_H
 
 #include "dakota_data_types.hpp"
+#include "ProblemDescDB.hpp"
 
 namespace Dakota {
 
@@ -26,6 +27,53 @@ namespace Dakota {
 */
 class LowDiscrepancySequence
 {
+public:
+
+  /// Default constructor
+  LowDiscrepancySequence(ProblemDescDB& problem_db) :
+    outputLevel(problem_db.get_short("method.output"))
+  {
+    
+  }
+
+  /// Destructor
+  ~LowDiscrepancySequence()
+  {
+
+  }
+
+  /// Getter and setter for dimension
+  size_t get_dimension() { return dimension; }
+  void set_dimension(size_t newDimension) { dimension = newDimension; }
+
+  // /// Getter and setter for seed
+  size_t get_seed() { return seed; }
+  // void set_seed(int newSeed) { seed = newSeed; }
+
+  /// Getter for output level
+  short get_output_level() { return outputLevel; }
+
+  /// Get the first `n` points from this low-discrepancy generator
+  /// This function will store the points in-place in the matrix `points`
+  /// Each column of `points` contains a `dimension`-dimensional point
+  void get_points(
+    const size_t n,
+    RealMatrix& points
+  )
+  {
+    get_points(0, n, points);
+  }
+
+  /// Generate low-discrepancy points between `nMin` and `nMax` 
+  /// This function will store the points in-place in the matrix `points`
+  /// Each column of `points` contains a `dimension`-dimensional point
+  virtual void get_points(
+      const size_t nMin,
+      const size_t nMax, 
+      RealMatrix& points
+  ) = 0;
+
+private:
 
   /// The dimension of this low-discrepancy sequence
   size_t dimension;
@@ -33,38 +81,10 @@ class LowDiscrepancySequence
   /// The seed of this low-discrepancy sequence
   int seed;
 
-public:
+  /// output verbosity level: {SILENT, QUIET, NORMAL, VERBOSE, DEBUG}_OUTPUT
+  short outputLevel;
 
-  /// Destructor
-  virtual ~LowDiscrepancySequence() { }
-
-  /// Setter and getter for dimension
-  size_t get_dimension() { return dimension; }
-  void set_dimension(size_t new_dimension) { dimension = new_dimension; }
-
-  /// Setter and getter for seed
-  size_t get_seed() { return seed; }
-  void set_seed(int new_seed) { seed = new_seed; }
-
-  /// Get the first `n` points from this low-discrepancy generator
-  /// This function will store the points in-place in the matrix `points`
-  /// Each column of `points` contains a point
-  inline void get_points(
-    const size_t n,
-    RealMatrix& points
-  )
-  {
-    get_points(0, n, points)
-  }
-
-  /// Generate low-discrepancy points between `n_min` and `n_max` 
-  /// This function will store the points in-place in the matrix `points`
-  /// Each column of `points` contains a point
-  virtual void get_points(
-      const size_t n_min,
-      const size_t n_max, 
-      RealMatrix& points
-  ) = 0;
+};
 
 } // namespace Dakota
 

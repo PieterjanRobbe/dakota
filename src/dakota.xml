@@ -2985,19 +2985,26 @@
         <keyword id="d_max" name="d_max" code="{N_mdm(int,maxDimension)}" label="d_max" minOccurs="0" default="0">
           <param type="INTEGER" constraint=">= 0" />
         </keyword>
-        <keyword id="m_max" name="m_max" code="{N_mdm(int,maxPoints)}" label="m_max" minOccurs="0" default="0">
+        <keyword id="m_max" name="m_max" code="{N_mdm(int,log2MaxPoints)}" label="m_max" minOccurs="0" default="0">
           <param type="INTEGER" constraint=">= 0" />
         </keyword>
         <keyword id="generating_vector" name="generating_vector" code="{0}" label="Generating vector" minOccurs="0" default="No generating vector">
-          <keyword  id="generating_vector_inline" name="generating_vector_inline" code="{N_mdm(ivec,generatingVector)}" label="Inline generating vector" minOccurs="0" >
-            <param type="INTEGERLIST" />
-          </keyword>
-          <keyword  id="generating_vector_file_name" name="generating_vector_file_name" code="{N_mom(str,generatingVectorFileName)}" label="Generating vector file name" minOccurs="0" >
-            <param type="STRING" />
-          </keyword>
-          <keyword  id="generating_vector_predefined" name="generating_vector_predefined" code="{N_mom(str,generatingVectorPredefined)}" label="Predefined generating vector" minOccurs="0" >
-            <param type="STRING" />
-          </keyword>
+          <oneOf label="Generating Vector"> 
+            <keyword id="inline" name="inline" code="{N_mdm(ivec,generatingVector)}" label="Inline generating vector" >
+              <param type="INTEGERLIST" />
+            </keyword>
+            <keyword id="file" name="file" code="{N_mdm(str,generatingVectorFileName)}" label="Generating vector file" >
+              <param type="STRING" />
+            </keyword>
+            <keyword id="predefined" name="predefined" code="{0}" label="Predefined generating vector" default="Default generating vector">
+              <oneOf label="Predefined Generating Vectors">
+                <keyword id="kuo_d3600_m20" name="kuo_d3600_m20" code="{N_mdm(true,kuo_d3600_m20)}" label="Generating vector from Kuo et al.">
+                </keyword>
+                <keyword id="cools_kuo_nuyens_d250_m20" name="cools_kuo_nuyens_d250_m20" code="{N_mdm(true,cools_kuo_nuyens_d250_m20)}" label="Generating vector from Cools, Kuo and Nuyens (2016)">
+                </keyword>
+              </oneOf>
+            </keyword>
+          </oneOf>
         </keyword>
     </keyword>
 	  <keyword  id="variance_based_decomp2" name="variance_based_decomp" code="{N_mdm(true,vbdFlag)}" label="variance_based_decomp"  minOccurs="0" default="no variance-based decomposition" >

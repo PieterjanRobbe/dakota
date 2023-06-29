@@ -884,15 +884,16 @@ public:
   /// Flag to indicate randomization of low-discrepancy sequence
   bool randomizeFlag;
   /// Maximum dimension of low-discrepancy generator
-  int d_max;
+  int maxDimension;
   /// (log2 of) maximum number of points off low-discrepancy generator
-  int m_max;
+  int log2MaxPoints;
   /// Generating vector of the rank-1 lattice rule
   IntVector generatingVector;
   /// Name of file with generating vector
-  str generatingVectorFileName;
-  /// Predefined generating vector file
-  str generatingVectorPredefined;
+  String generatingVectorFileName;
+  /// Predefined generating vectors
+  bool kuo_d3600_m20;
+  bool cools_kuo_nuyens_d250_m20;
 
   /// flag indicating the calculation/output of standardized regression coefficients
   bool stdRegressionCoeffs;
