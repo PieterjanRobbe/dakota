@@ -70,8 +70,6 @@ Rank1Lattice::Rank1Lattice(ProblemDescDB& problem_db) :
   }
   else
   {
-    check_dMax_postive();
-    check_mMax_postive();
 
     /// Name of the file with the generating vector
     String file = problem_db.get_string("method.generating_vector.file");
@@ -79,6 +77,13 @@ Rank1Lattice::Rank1Lattice(ProblemDescDB& problem_db) :
     /// Case II: the generating vector is provided in the input file
     if ( generating_vector.length() > 0 )
     {
+      /// TODO
+      if ( get_output_level() >= DEBUG_OUTPUT )
+      {
+        Cout << "Reading inline generating vector..." << std::endl;
+      }
+      check_dMax_postive();
+      check_mMax_postive();
     }
 
     /// Case III: the generating vector is provided in an external file
@@ -90,6 +95,8 @@ Rank1Lattice::Rank1Lattice(ProblemDescDB& problem_db) :
         Cout << "Reading generating vector from file " << file << "..."
           << std::endl;
       }
+      check_dMax_postive();
+      check_mMax_postive();
     }
 
     /// Fall-back option
@@ -97,7 +104,12 @@ Rank1Lattice::Rank1Lattice(ProblemDescDB& problem_db) :
     {
       if ( get_output_level() >= DEBUG_OUTPUT )
       {
-        Cout << "Fallback option: generating vector 'kuo_d3600_m20'" << std::endl;
+        Cout << "Fallback option: generating vector 'cools_kuo_nuyens_d250_m20'" << std::endl;
+        set_dMax(250);
+        set_mMax(20);
+        generating_vector.resize(dMax);
+        for (int j=0; j<dMax; j++)
+          generating_vector[j] = cools_kuo_nuyens_d250_m20[j];
       }
     }
   }
@@ -197,6 +209,7 @@ void Rank1Lattice::get_points(
   RealMatrix& points
 )
 {
+  // Check if maximum number of points is exceeded
   auto maxPoints = (1 << mMax);
   if (nMax > maxPoints)
   {
@@ -206,14 +219,48 @@ void Rank1Lattice::get_points(
     abort_handler(METHOD_ERROR);
   }
 
+  // Check if maximum dimension is exceeded
+  auto dimension = points.numRows();
+  if (dimension > dMax)
+  {
+    Cerr << "\nError: this rank-1 lattice rule can only generate points in "
+      << " dimension " << dMax << " or less, got " << dimension << "."
+      << std::endl;
+    abort_handler(METHOD_ERROR);
+  }
+
+  // Check dimension of points
+  auto numPoints = points.numCols();
+  if ( numPoints - 1 != nMax - nMin )
+  {
+    Cerr << "\nError: requested lattice points between index " << nMin
+      << " and " << nMax << ", but the provided matrix expects "
+      << numPoints << " points." << std::endl;
+    abort_handler(METHOD_ERROR);
+  }
+
   switch (order)
   {
     case NATURAL:
     {
+      // TODO: move this outside the loop and use a function pointer
+      Cout << "The order is NATURAL" << std::endl;
+      for (int k=0; k<numPoints; ++k)
+      {
+        Real kN = k / (double) (1 << mMax);
+        Cout << "kN: " << kN << std::endl;
+        for (int d=0; d<dimension; ++d)
+        {
+          Cout << "length of generating vector is " << generating_vector.length() << std::endl;
+          auto tmp = kN * generating_vector[d];
+          points[k][d] = tmp - std::floor(tmp);
+        }
+      }
       break;
     }
     case GREY:
     {
+      Cout << "The order is GREY" << std::endl;
       break;
     }
   }
