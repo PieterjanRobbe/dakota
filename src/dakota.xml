@@ -2980,32 +2980,37 @@
 	    </optional>
 	  </keyword>
     <keyword id="low_discrepancy" name="low_discrepancy" code="{0}" label="Low-discrepancy samples" minOccurs="0" default="No low-discrepancy sampling">
-        <keyword id="randomize" name="randomize" code="{N_mdm(true,randomizeFlag)}" label="randomize" minOccurs="0">
-        </keyword>
-        <keyword id="d_max" name="d_max" code="{N_mdm(int,maxDimension)}" label="d_max" minOccurs="0" default="0">
-          <param type="INTEGER" constraint=">= 0" />
-        </keyword>
-        <keyword id="m_max" name="m_max" code="{N_mdm(int,log2MaxPoints)}" label="m_max" minOccurs="0" default="0">
-          <param type="INTEGER" constraint=">= 0" />
-        </keyword>
-        <keyword id="generating_vector" name="generating_vector" code="{0}" label="Generating vector" minOccurs="0" default="No generating vector">
-          <oneOf label="Generating Vector"> 
-            <keyword id="inline" name="inline" code="{N_mdm(ivec,generatingVector)}" label="Inline generating vector" >
-              <param type="INTEGERLIST" />
-            </keyword>
-            <keyword id="file" name="file" code="{N_mdm(str,generatingVectorFileName)}" label="Generating vector file" >
-              <param type="STRING" />
-            </keyword>
-            <keyword id="predefined" name="predefined" code="{0}" label="Predefined generating vector" default="Default generating vector">
-              <oneOf label="Predefined Generating Vectors">
-                <keyword id="kuo_d3600_m20" name="kuo_d3600_m20" code="{N_mdm(true,kuo_d3600_m20)}" label="Generating vector from Kuo et al.">
-                </keyword>
-                <keyword id="cools_kuo_nuyens_d250_m20" name="cools_kuo_nuyens_d250_m20" code="{N_mdm(true,cools_kuo_nuyens_d250_m20)}" label="Generating vector from Cools, Kuo and Nuyens (2016)">
-                </keyword>
-              </oneOf>
-            </keyword>
-          </oneOf>
-        </keyword>
+      <keyword id="no_randomize" name="no_randomize" code="{N_mdm(true,noRandomizeFlag)}" label="no_randomize" minOccurs="0">
+      </keyword>
+      <keyword id="m_max" name="m_max" code="{N_mdm(int,log2MaxPoints)}" label="m_max" minOccurs="0" default="0">
+        <param type="INTEGER" constraint=">= 0" />
+      </keyword>
+      <keyword id="generating_vector" name="generating_vector" code="{0}" label="Generating vector" minOccurs="0" default="No generating vector">
+        <oneOf label="Generating Vector"> 
+          <keyword id="inline" name="inline" code="{N_mdm(ivec,generatingVector)}" label="Inline generating vector" >
+            <param type="INTEGERLIST" />
+          </keyword>
+          <keyword id="file" name="file" code="{N_mdm(str,generatingVectorFileName)}" label="Generating vector file" >
+            <param type="STRING" />
+          </keyword>
+          <keyword id="predefined" name="predefined" code="{0}" label="Predefined generating vector" default="Default generating vector">
+            <oneOf label="Predefined Generating Vectors">
+              <keyword id="kuo" name="kuo" code="{N_mdm(true,kuo)}" label="Generating vector from Kuo's website">
+              </keyword>
+              <keyword id="cools_kuo_nuyens" name="cools_kuo_nuyens" code="{N_mdm(true,cools_kuo_nuyens)}" label="Generating vector from Cools, Kuo and Nuyens (2016)">
+              </keyword>
+            </oneOf>
+          </keyword>
+        </oneOf>
+      </keyword>
+      <keyword id="ordering" name="ordering" code="{0}" label="Ordering" minOccurs="0" default="Radical inverse ordering">
+        <oneOf label="Ordering">
+          <keyword id="natural" name="natural" code="{N_mdm(true,naturalOrdering)}" label="Natural ordering" >
+          </keyword>
+          <keyword id="radical_inverse" name="radical_inverse" code="{N_mdm(true,radicalInverseOrdering)}" label="Radical inverse ordering" >
+          </keyword>
+        </oneOf>
+      </keyword>
     </keyword>
 	  <keyword  id="variance_based_decomp2" name="variance_based_decomp" code="{N_mdm(true,vbdFlag)}" label="variance_based_decomp"  minOccurs="0" default="no variance-based decomposition" >
 	    <keyword  id="drop_tolerance2" name="drop_tolerance" code="{N_mdm(Real,vbdDropTolerance)}" label="drop_tolerance"  minOccurs="0" default="All VBD indices displayed" >

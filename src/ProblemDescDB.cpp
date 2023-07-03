@@ -2296,7 +2296,6 @@ int ProblemDescDB::get_int(const String& entry_name) const
       {"samples", P_MET numSamples},
       {"sub_sampling_period", P_MET subSamplingPeriod},
       {"symbols", P_MET numSymbols},
-      {"d_max", P_MET maxDimension},
       {"m_max", P_MET log2MaxPoints}
     },
     { /* model */
@@ -2696,9 +2695,11 @@ bool ProblemDescDB::get_bool(const String& entry_name) const
       {"tolerance_intervals", P_MET toleranceIntervalsFlag},
       {"variance_based_decomp", P_MET vbdFlag},
       {"wilks", P_MET wilksFlag},
-      {"randomize", P_MET randomizeFlag},
-      {"generating_vector.predefined.kuo_d3600_m20", P_MET kuo_d3600_m20},
-      {"generating_vector.predefined.cools_kuo_nuyens_d250_m20", P_MET cools_kuo_nuyens_d250_m20}
+      {"no_randomize", P_MET noRandomizeFlag},
+      {"kuo", P_MET kuo},
+      {"cools_kuo_nuyens", P_MET cools_kuo_nuyens},
+      {"ordering.natural", P_MET naturalOrdering},
+      {"ordering.radical_inverse", P_MET radicalInverseOrdering}
     },
     { /* model */
       {"active_subspace.build_surrogate", P_MOD subspaceBuildSurrogate},

@@ -6946,9 +6946,11 @@ static bool
 	MP_(vbdFlag),
 	MP_(volQualityFlag),
 	MP_(wilksFlag),
-  MP_(randomizeFlag),
-  MP_(kuo_d3600_m20),
-  MP_(cools_kuo_nuyens_d250_m20);
+  MP_(noRandomizeFlag),
+  MP_(kuo),
+  MP_(cools_kuo_nuyens),
+  MP_(naturalOrdering),
+  MP_(radicalInverseOrdering);
 
 static short
 	MP_(polynomialOrder);
@@ -6997,7 +6999,6 @@ static int
 	MP_(subSamplingPeriod),
 	MP_(totalPatternSize),
 	MP_(verifyLevel),
-  MP_(maxDimension),
   MP_(log2MaxPoints);
 
 static size_t

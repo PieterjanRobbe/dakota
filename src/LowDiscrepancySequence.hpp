@@ -31,7 +31,8 @@ public:
 
   /// Default constructor
   LowDiscrepancySequence(ProblemDescDB& problem_db) :
-    outputLevel(problem_db.get_short("method.output"))
+    outputLevel(problem_db.get_short("method.output")),
+    seed(problem_db.get_int("method.random_seed"))
   {
     
   }

@@ -38,7 +38,9 @@ public:
   //
 
   /// default constructor
-  NonDLowDiscrepancySampling(ProblemDescDB& problem_db, Model& model) : NonDLHSSampling(problem_db, model), sequence(new T(problem_db))
+  NonDLowDiscrepancySampling(ProblemDescDB& problem_db, Model& model) : 
+    NonDLHSSampling(problem_db, model),
+    sequence(new T(problem_db))
   {
 
   }
@@ -79,43 +81,20 @@ protected:
     bool write_message
   )
   {
-    // Initialize lhsDriver in NonDSampling (useful for random shifts?)
-    // initialize_sample_driver(write_message, 1);
-
-    // Choose sampling mode
-    // switch (samplingVarsMode) {
-
-    // Get lower and upper bounds
-    const RealVector& lower = model.all_continuous_lower_bounds();
-    const RealVector& upper = model.all_continuous_upper_bounds();
-
-    for (int i=0; i<lower.length(); ++i)
-      Cout << "parameter " << i << ": lower=" << lower[i] << ", upper=" << upper[i] << std::endl;
-
-
-
+    /// Set dimension of the low-discrepancy sequence to the given dimension
     sequence->set_dimension(model.cv());
 
-    Cout <<  "seed is " << sequence->get_seed() << std::endl;
-
+    /// Generate the points of this low-discrepancy sequence
     sequence->get_points(num_samples, sample_matrix);
 
-
-
-    // for (size_t j; j < model.cv(); j++)
-    // {
-    //   auto l = lower[j];
-    //   auto u = upper[j];
-    //   for sample
-    //   sample_matrix[j] *= 
-    // }
-
-    // Scale points from [0, 1) to the lower and upper bounds
+    /// Scale points from [0, 1) to the model's lower and upper bounds
+    const RealVector& lower = model.all_continuous_lower_bounds();
+    const RealVector& upper = model.all_continuous_upper_bounds();
     scale(sample_matrix, lower, upper);
   }
 
   /// Generate a set of rank-1 lattice points using the given lower and upper
-  /// bounds
+  /// bounds and store the results in `allSamples`
   void get_parameter_sets(
     const RealVector& lower_bnds,
     const RealVector& upper_bnds
@@ -141,28 +120,36 @@ protected:
     abort_handler(METHOD_ERROR);
   }
 
-  //
-  //- Heading: Member functions
-  //
+  // 
+  // - Heading: Member functions
+  // 
 
 private:
 
   //
-  //- Heading: Data
+  // - Heading: Data
   //
   T* sequence;
 
-  // Function to scale a given sample matrix from [0, 1) to the given lower and upper bounds
-  // Assumes that the sample matrix has shape `numParams` x `numSamples`
-  // NOTE: I assume there is a function in Dakota to do this, but I couldn't find it immediately
-  void scale(RealMatrix& sample_matrix, const RealVector& lower_bnds, const RealVector& upper_bnds)
+  /// Function to scale a given sample matrix from [0, 1) to the given lower
+  /// and upper bounds
+  /// Assumes that the sample matrix has shape `numParams` x `numSamples`
+  void scale(
+    RealMatrix& sample_matrix,
+    const RealVector& lower_bnds,
+    const RealVector& upper_bnds
+  )
   {
     auto numParams = sample_matrix.numRows();
     auto numSamples = sample_matrix.numCols();
     for (size_t col=0; col < sample_matrix.numCols(); col++)
     {
       for (size_t row=0; row < sample_matrix.numRows(); row++)
-        sample_matrix[col][row] = sample_matrix[col][row]*(upper_bnds[row] - lower_bnds[row]) + lower_bnds[row];
+      {
+        Real u = upper_bnds[row];
+        Real l = lower_bnds[row];
+        sample_matrix[col][row] = sample_matrix[col][row]*(u - l) + l;
+      }
     }
   }
 

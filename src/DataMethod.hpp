@@ -882,18 +882,19 @@ public:
   short wilksSidedInterval;
 
   /// Flag to indicate randomization of low-discrepancy sequence
-  bool randomizeFlag;
-  /// Maximum dimension of low-discrepancy generator
-  int maxDimension;
+  bool noRandomizeFlag;
   /// (log2 of) maximum number of points off low-discrepancy generator
   int log2MaxPoints;
-  /// Generating vector of the rank-1 lattice rule
+  /// Inline generating vector of the rank-1 lattice rule
   IntVector generatingVector;
   /// Name of file with generating vector
   String generatingVectorFileName;
   /// Predefined generating vectors
-  bool kuo_d3600_m20;
-  bool cools_kuo_nuyens_d250_m20;
+  bool kuo;
+  bool cools_kuo_nuyens;
+  /// Ordering of the lattice points
+  bool naturalOrdering;
+  bool radicalInverseOrdering;
 
   /// flag indicating the calculation/output of standardized regression coefficients
   bool stdRegressionCoeffs;
