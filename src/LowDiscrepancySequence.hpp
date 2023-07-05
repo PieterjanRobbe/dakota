@@ -62,7 +62,7 @@ public:
     RealMatrix& points
   )
   {
-    get_points(0, n - 1, points);
+    get_points(0, n, points);
   }
 
   /// Generate low-discrepancy points between `nMin` and `nMax` 

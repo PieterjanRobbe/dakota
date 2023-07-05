@@ -240,23 +240,33 @@ void Rank1Lattice::get_points(
 )
 {
   /// Check sizes of the matrix `points`
-  check_sizes(nMin, nMax, points);Z
+  check_sizes(nMin, nMax, points);
 
   /// Generate the rank-1 lattice points
-  for (UInt32 k=0; k<points.numCols(); ++k)
+  for ( UInt32 k=nMin; k<nMax; ++k )
   {
     Real phik = (this->*phi)(k);
-    for (int j=0; j<get_dimension(); ++j)
+    for ( int j=0; j<get_dimension(); ++j )
     {
       Real point = phik * generatingVector[j] + randomShift[j];
-      points[k][j] = point - std::floor(point);
+      points[k - nMin][j] = point - std::floor(point);
     }
   }
 
   /// Print summary info
   if ( get_output_level() >= DEBUG_OUTPUT )
+  {
     Cout << "Successfully generated " << points.numCols() << " rank-1 lattice "
-      << "points in " << points.numRows() << " dimensions";
+      << "points in " << points.numRows() << " dimensions:" << std::endl;
+    for ( int col=0; col<points.numCols(); ++col )
+    {
+      Cout << col + nMin << ": ";
+      for ( int row=0; row<points.numRows(); ++row )
+        Cout << points[col][row] << " ";
+      Cout << std::endl;
+    }
+  }
+    
 }
 
 /// Perform checks on the matrix `points`
@@ -281,7 +291,7 @@ void Rank1Lattice::check_sizes(
 
   /// Check dimension of points
   auto numPoints = points.numCols();
-  if ( numPoints - 1 != nMax - nMin )
+  if ( numPoints != nMax - nMin )
   {
     Cerr << "\nError: requested lattice points between index " << nMin
       << " and " << nMax << ", but the provided matrix expects "

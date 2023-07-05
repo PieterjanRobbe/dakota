@@ -21,12 +21,12 @@
 
 namespace Dakota {
 
-/// Class for rank-1 lattice rules in Dakota
+/// Class for low-discrepancy sampling in Dakota
 
-/** ...
-
-NonDRank1LatticeSampling inherits from NonDLHSSampling so we can reuse the
-cool features such as global sensitivity analysis, design of experiments etc.
+/**
+NOTE: NonDRank1LatticeSampling inherits from NonDLHSSampling so we can reuse 
+the cool features such as global sensitivity analysis, design of experiments 
+etc.
 */
 template <typename T>
 class NonDLowDiscrepancySampling: public NonDLHSSampling
@@ -40,7 +40,8 @@ public:
   /// default constructor
   NonDLowDiscrepancySampling(ProblemDescDB& problem_db, Model& model) : 
     NonDLHSSampling(problem_db, model),
-    sequence(new T(problem_db))
+    sequence(new T(problem_db)),
+    colPtr(0)
   {
 
   }
@@ -70,7 +71,7 @@ protected:
     RealMatrix& sample_matrix
   )
   {
-    get_parameter_sets(model, numSamples, allSamples, true);
+    get_parameter_sets(model, num_samples, sample_matrix, true);
   }
                           
   /// Same as above, but allow verbose outputs
@@ -81,28 +82,56 @@ protected:
     bool write_message
   )
   {
-    /// Set dimension of the low-discrepancy sequence to the given dimension
-    sequence->set_dimension(model.cv());
 
-    /// Generate the points of this low-discrepancy sequence
-    sequence->get_points(num_samples, sample_matrix);
+    /// Only uniform low-discrepancy sampling is allowed for now
+    switch (samplingVarsMode) {
+      case ACTIVE_UNIFORM:
+      case ALL_UNIFORM:
+      case UNCERTAIN_UNIFORM:
+      case ALEATORY_UNCERTAIN_UNIFORM:
+      case EPISTEMIC_UNCERTAIN_UNIFORM:
+      {
+         /// Set dimension of the low-discrepancy sequence to the given dimension
+        sequence->set_dimension(model.cv());
 
-    /// Scale points from [0, 1) to the model's lower and upper bounds
-    const RealVector& lower = model.all_continuous_lower_bounds();
-    const RealVector& upper = model.all_continuous_upper_bounds();
-    scale(sample_matrix, lower, upper);
+        /// Generate the points of this low-discrepancy sequence
+        sequence->get_points(colPtr, colPtr + num_samples, sample_matrix);
+
+        /// Scale points from [0, 1) to the model's lower and upper bounds
+        const RealVector& lower = model.all_continuous_lower_bounds();
+        const RealVector& upper = model.all_continuous_upper_bounds();
+        scale(sample_matrix, lower, upper);
+
+        break;
+      }
+      default:
+      {
+        Cerr << "\nError: only uniform low-discrepancy sampling has been "
+        << "implemented." << std::endl;
+        abort_handler(METHOD_ERROR);
+      }
+    }
+
+    /// Update `colPtr` when using refinement samples
+    if ( allSamples.numCols() != sample_matrix.numCols() )
+      colPtr += num_samples;
   }
 
   /// Generate a set of rank-1 lattice points using the given lower and upper
   /// bounds and store the results in `allSamples`
   void get_parameter_sets(
-    const RealVector& lower_bnds,
-    const RealVector& upper_bnds
+    const RealVector& lower,
+    const RealVector& upper
   )
   {
-    Cout << "\n\n\n ERROR: This function is not implemented yet \n\n\n"
-      << std::endl;
-    abort_handler(METHOD_ERROR);
+    /// Set dimension of the low-discrepancy sequence
+    sequence->set_dimension(lower.length());
+
+    /// Generate the points of this low-discrepancy sequence
+    sequence->get_points(allSamples.numCols(), allSamples);
+
+    /// Scale points from [0, 1) to the model's lower and upper bounds
+    scale(allSamples, lower, upper);
   }
 
   /// Generate a set of normally-distributed points by mapping the rank-1
@@ -110,12 +139,12 @@ protected:
   void get_parameter_sets(
     const RealVector& means,
     const RealVector& std_devs,
-    const RealVector& lower_bnds,
-    const RealVector& upper_bnds,
+    const RealVector& lower,
+    const RealVector& upper,
     RealSymMatrix& correl
   )
   {
-    Cout << "\n\n\n ERROR: This function is not implemented yet \n\n\n"
+    Cout << "\n\n\n ERROR: This function is not implemented yet."
       << std::endl;
     abort_handler(METHOD_ERROR);
   }
@@ -129,15 +158,21 @@ private:
   //
   // - Heading: Data
   //
+
+  /// The low-discrepancy sequence to sample from
   T* sequence;
+
+  /// Keep track of how many samples are already generated when using
+  /// refinement samples
+  int colPtr;
 
   /// Function to scale a given sample matrix from [0, 1) to the given lower
   /// and upper bounds
   /// Assumes that the sample matrix has shape `numParams` x `numSamples`
   void scale(
     RealMatrix& sample_matrix,
-    const RealVector& lower_bnds,
-    const RealVector& upper_bnds
+    const RealVector& lower,
+    const RealVector& upper
   )
   {
     auto numParams = sample_matrix.numRows();
@@ -146,8 +181,8 @@ private:
     {
       for (size_t row=0; row < sample_matrix.numRows(); row++)
       {
-        Real u = upper_bnds[row];
-        Real l = lower_bnds[row];
+        Real u = upper[row];
+        Real l = lower[row];
         sample_matrix[col][row] = sample_matrix[col][row]*(u - l) + l;
       }
     }
