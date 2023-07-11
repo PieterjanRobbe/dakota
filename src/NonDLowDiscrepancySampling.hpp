@@ -38,10 +38,13 @@ public:
   //
 
   /// default constructor
-  NonDLowDiscrepancySampling(ProblemDescDB& problem_db, Model& model) : 
-    NonDLHSSampling(problem_db, model),
-    sequence(new T(problem_db)),
-    colPtr(0)
+  NonDLowDiscrepancySampling(
+    ProblemDescDB& problem_db,
+    Model& model
+  ) : 
+  NonDLHSSampling(problem_db, model),
+  sequence(new T(problem_db)),
+  colPtr(0)
   {
 
   }
@@ -187,7 +190,7 @@ private:
       }
     }
   }
-
+  
 };
 
 } // namespace Dakota

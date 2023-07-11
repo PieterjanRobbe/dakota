@@ -17,24 +17,29 @@
 #define LOW_DISCREPANCY_SEQUENCE_H
 
 #include "dakota_data_types.hpp"
-#include "ProblemDescDB.hpp"
+#include "dakota_stat_util.hpp"
+// #include "ProblemDescDB.hpp"
 
 namespace Dakota {
 
 /// Abstract class for low-discrepancy sequences
 
-/** ...
+/** This abstract class provides uniform access to all low-discrepancy 
+    sequences through the `get_points` function.
 */
 class LowDiscrepancySequence
 {
 public:
 
   /// Default constructor
-  LowDiscrepancySequence(ProblemDescDB& problem_db) :
-    outputLevel(problem_db.get_short("method.output")),
-    seed(problem_db.get_int("method.random_seed"))
+  LowDiscrepancySequence(
+    int seedValue,
+    short outputLevel
+  ) : 
+  seedValue(seedValue > 0 ? seedValue : generate_system_seed()),
+  outputLevel(outputLevel)
   {
-    
+
   }
 
   /// Destructor
@@ -45,18 +50,31 @@ public:
 
   /// Getter and setter for dimension
   size_t get_dimension() { return dimension; }
-  void set_dimension(size_t newDimension) { dimension = newDimension; }
+  void set_dimension(size_t dimension) { this->dimension = dimension; }
 
-  // /// Getter and setter for seed
-  size_t get_seed() { return seed; }
-  // void set_seed(int newSeed) { seed = newSeed; }
+  // /// Getter and setter for seedValue
+  size_t get_seed() { return seedValue; }
+  void set_seed(int seedValue) { this->seedValue = seedValue; }
 
   /// Getter for output level
   short get_output_level() { return outputLevel; }
 
+  /// Get points from this low-discrepancy generator
+  /// This function will store the points in-place in the matrix `points`
+  /// Each column of `points` contains a `dimension`-dimensional point
+  /// where `dimension` is equal to the number of rows of `points` and the
+  /// number of points is equal to the number of columns of `points`
+  void get_points(
+    RealMatrix& points
+  )
+  {
+    get_points(points.numCols(), points);
+  }
+
   /// Get the first `n` points from this low-discrepancy generator
   /// This function will store the points in-place in the matrix `points`
   /// Each column of `points` contains a `dimension`-dimensional point
+  /// where `dimension` is equal to the number of rows of `points` 
   void get_points(
     const size_t n,
     RealMatrix& points
@@ -77,12 +95,13 @@ public:
 private:
 
   /// The dimension of this low-discrepancy sequence
-  size_t dimension;
+  size_t dimension{0};
 
   /// The seed of this low-discrepancy sequence
-  int seed;
+  int seedValue;
 
-  /// output verbosity level: {SILENT, QUIET, NORMAL, VERBOSE, DEBUG}_OUTPUT
+  /// The output verbosity level, can be one of
+  /// {SILENT, QUIET, NORMAL, VERBOSE, DEBUG}_OUTPUT
   short outputLevel;
 
 };

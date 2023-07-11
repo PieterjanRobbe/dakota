@@ -22,10 +22,10 @@
 
 namespace Dakota {
 
-/// Class for rank-1 lattice rules in Dakota
+/// Enum for rank-1 lattice rule ordering
+enum Order { NATURAL_ORDERING, RADICAL_INVERSE_ORDERING };
 
-/** ...
-*/
+/// Class for rank-1 lattice rules in Dakota
 class Rank1Lattice : public LowDiscrepancySequence
 {
 public:
@@ -35,7 +35,35 @@ public:
   //
 
   /// Default constructor
-  Rank1Lattice(ProblemDescDB& problem_db);
+  Rank1Lattice(
+    const UInt32Vector& generatingVector,
+    int mMax,
+    bool randomize,
+    int seedValue,
+    Order order,
+    short outputLevel
+  );
+
+  /// A constructor that uses radical inverse ordering
+  Rank1Lattice(
+    const UInt32Vector& generatingVector,
+    int mMax,
+    int seedValue
+  );
+
+  /// A constructor that uses radical inverse ordering and a random shift
+  Rank1Lattice(
+    const UInt32Vector& generatingVector,
+    int mMax
+  );
+
+  /// A constructor with no arguments
+  Rank1Lattice();
+
+  /// A constructor that takes a problem description database
+  Rank1Lattice(
+    ProblemDescDB& problem_db
+  );
 
   /// Destructor
   ~Rank1Lattice();
@@ -43,13 +71,19 @@ public:
   /// Set dimension of this rank-1 lattice rule
   /// Note: overriden from LowDiscrepancySequence to check if the new 
   /// dimension is less than or equal to the maximum allowed dimension `dMax`
-  void set_dimension(size_t new_dimension);
+  void set_dimension(
+    size_t dimension
+  );
 
   /// Get the overloaded function `get_points`
   using LowDiscrepancySequence::get_points;
 
-  /// Generate rank-1 lattice points between `n_min` and `n_max` 
-  void get_points(const size_t n_min, const size_t n_max, RealMatrix& points);
+  /// Generate rank-1 lattice points from index `nMin` to index `nMax` 
+  void get_points(
+    const size_t nMin,
+    const size_t nMax,
+    RealMatrix& points
+  );
 
 protected:
 
@@ -67,18 +101,8 @@ private:
   //- Heading: Data
   //
 
-  /// Randomize this rank-1 lattice rule if true
-  bool randomize;
-
-  /// Ordering of the points of this rank-1 lattice rule
-  enum Order { NATURAL, RADICAL_INVERSE };
-  Order order;
-
   /// Generating vector of this rank-1 lattice rule
   UInt32Vector generatingVector;
-
-  /// Random shift associated with this rank-1 lattice rule
-  RealVector randomShift;
 
   /// Maximum dimension of this rank-1 lattice rule
   int dMax;
@@ -86,21 +110,51 @@ private:
   /// 2^m_max is the maximum number of points of this rank-1 lattice rule
   int mMax;
 
+  /// Randomize this rank-1 lattice rule if true
+  bool randomize;
+
+  /// Random shift associated with this rank-1 lattice rule
+  RealVector randomShift;
+
+  /// Ordering of the points of this rank-1 lattice rule
+  Order order;
+
   //
   //- Heading: Convenience functions
   //
 
+  /// Extract the generating vector from the given problem description database
+  const UInt32Vector get_generating_vector(
+    ProblemDescDB& problem_db
+  );
+
+  /// Extract the log2 of the maximum number of points from the given problem
+  /// description database
+  int get_m_max(
+    ProblemDescDB& problem_db
+  );
+
   /// For use with the NATURAL ordering of the points
-  Real natural(UInt32 k);
+  Real natural(
+    UInt32 k
+  );
 
   /// For use with the RADICAL_INVERSE ordering of the points
-  Real radical_inverse(UInt32 k);
+  Real radical_inverse(
+    UInt32 k
+  );
 
   /// Function pointer to the chosen ordering of the points
-  Real (Rank1Lattice::*phi)(UInt32);
+  Real (Rank1Lattice::*phi)(
+    UInt32
+  );
 
   /// Performs checks on the matrix `points`
-  void check_sizes(const size_t n_min, const size_t n_max, RealMatrix& points);
+  void check_sizes(
+    const size_t nMin,
+    const size_t nMax,
+    RealMatrix& points
+  );
 
 };
 
