@@ -306,12 +306,26 @@ int Rank1Lattice::get_m_max(
   ProblemDescDB& problem_db
 )
 {
-  if ( problem_db.get_bool("method.kuo") )
-    return 20;
-  else if ( problem_db.get_bool("method.cools_kuo_nuyens") )
-    return 20;
-  else
+  /// Name of the file with the generating vector
+  String file = problem_db.get_string("method.generating_vector.file");
+
+  /// Get the inline generating vector
+  IntVector inlineVector = 
+    problem_db.get_iv("method.generating_vector.inline");
+  size_t len = inlineVector.length();
+
+  /// Same logic as for get_generating_vector
+  if ( !file.empty() || len > 0 )
+  {
     return problem_db.get_int("method.m_max");
+  }
+  else
+  {
+    if ( problem_db.get_bool("method.kuo") )
+      return 20;
+    else
+      return 20;
+  }
 }
 
 /// Destructor
@@ -329,6 +343,9 @@ void Rank1Lattice::get_points(
   RealMatrix& points
 )
 {
+  /// Set dimension
+  set_dimension(points.numRows());
+
   /// Check sizes of the matrix `points`
   check_sizes(nMin, nMax, points);
 
@@ -374,7 +391,7 @@ void Rank1Lattice::check_sizes(
   auto maxPoints = (1 << mMax);
   if (nMax > maxPoints)
   {
-    Cerr << "\nError: request number of samples " << nMax
+    Cerr << "\nError: requested number of samples " << nMax
       << " is larger than the maximum allowed number of points "
       << maxPoints << "." << std::endl;
     abort_handler(METHOD_ERROR);
@@ -395,11 +412,11 @@ void Rank1Lattice::check_sizes(
 /// Note: overriden from LowDiscrepancySequence to check if the new 
 /// dimension is less than or equal to the maximum allowed dimension `dMax`
 void Rank1Lattice::set_dimension(
-  size_t new_dimension
+  size_t dimension
 )
 {
   /// Check if maximum dimension is exceeded
-  if (new_dimension > dMax)
+  if (dimension > dMax)
   {
     Cerr << "\nError: this rank-1 lattice rule can only generate points in "
       << " dimension " << dMax << " or less, got " << get_dimension() << ". "
@@ -408,7 +425,7 @@ void Rank1Lattice::set_dimension(
       << "dimensions." << std::endl;
     abort_handler(METHOD_ERROR);
   }
-  LowDiscrepancySequence::set_dimension(new_dimension);
+  LowDiscrepancySequence::set_dimension(dimension);
 }
 
 /// For use with the NATURAL ordering of the points

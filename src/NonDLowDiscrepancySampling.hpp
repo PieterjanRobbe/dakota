@@ -88,15 +88,13 @@ protected:
 
     /// Only uniform low-discrepancy sampling is allowed for now
     switch (samplingVarsMode) {
+      case ACTIVE: /// TODO: Probably need to distinguish uniform vs non-uniform sampling here
       case ACTIVE_UNIFORM:
       case ALL_UNIFORM:
       case UNCERTAIN_UNIFORM:
       case ALEATORY_UNCERTAIN_UNIFORM:
       case EPISTEMIC_UNCERTAIN_UNIFORM:
       {
-         /// Set dimension of the low-discrepancy sequence to the given dimension
-        sequence->set_dimension(model.cv());
-
         /// Generate the points of this low-discrepancy sequence
         sequence->get_points(colPtr, colPtr + num_samples, sample_matrix);
 
@@ -127,9 +125,6 @@ protected:
     const RealVector& upper
   )
   {
-    /// Set dimension of the low-discrepancy sequence
-    sequence->set_dimension(lower.length());
-
     /// Generate the points of this low-discrepancy sequence
     sequence->get_points(allSamples.numCols(), allSamples);
 
