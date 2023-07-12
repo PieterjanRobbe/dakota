@@ -88,13 +88,31 @@ protected:
 
     /// Only uniform low-discrepancy sampling is allowed for now
     switch (samplingVarsMode) {
-      case ACTIVE: /// TODO: Probably need to distinguish uniform vs non-uniform sampling here
+      case ACTIVE:
       case ACTIVE_UNIFORM:
       case ALL_UNIFORM:
       case UNCERTAIN_UNIFORM:
       case ALEATORY_UNCERTAIN_UNIFORM:
       case EPISTEMIC_UNCERTAIN_UNIFORM:
       {
+        /// Only uniform sampling has been implemented for now
+        if ( samplingVarsMode == ACTIVE )
+        {
+          Pecos::MultivariateDistribution& mv_dist
+            = model.multivariate_distribution();
+          std::vector<Pecos::RandomVariable>& variables
+            = mv_dist.random_variables();
+          for ( Pecos::RandomVariable variable : variables )
+          {
+            if ( variable.type() != Pecos::UNIFORM )
+            {
+              Cerr << "\nError: only uniform low-discrepancy sampling has been "
+                << "implemented." << std::endl;
+                abort_handler(METHOD_ERROR);
+            }
+          }
+        }
+
         /// Generate the points of this low-discrepancy sequence
         sequence->get_points(colPtr, colPtr + num_samples, sample_matrix);
 
@@ -107,8 +125,8 @@ protected:
       }
       default:
       {
-        Cerr << "\nError: only uniform low-discrepancy sampling has been "
-        << "implemented." << std::endl;
+        Cerr << "\nError: this sampling mode has not been implemented yet." 
+          << std::endl;
         abort_handler(METHOD_ERROR);
       }
     }
