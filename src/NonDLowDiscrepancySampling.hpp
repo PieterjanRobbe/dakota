@@ -18,15 +18,25 @@
 
 #include "dakota_data_types.hpp"
 #include "NonDLHSSampling.hpp"
+#include "LowDiscrepancySequence.hpp"
 
 namespace Dakota {
 
 /// Class for low-discrepancy sampling in Dakota
 
 /**
-NOTE: NonDRank1LatticeSampling inherits from NonDLHSSampling so we can reuse 
-the cool features such as global sensitivity analysis, design of experiments 
-etc.
+This is a templated adapter class that holds a reference to an object of type
+`LowDiscrepancySequence`. It's main function is to provide the implementation
+of the function `get_parameter_sets`, and to provide mappings from [0, 1) to
+the distribution of interest (TODO: future work).
+
+New low-discrepancy sequences only need to inherit from a
+`LowDiscrepancySequence` and provide implementation of a function
+`get_points` that generates the low-discrepancy points in [0, 1).
+
+NOTE: `NonDRank1LatticeSampling` inherits from` NonDLHSSampling` so we can 
+reuse the cool features such as global sensitivity analysis, 
+reliability analysis etc.
 */
 template <typename T>
 class NonDLowDiscrepancySampling: public NonDLHSSampling
