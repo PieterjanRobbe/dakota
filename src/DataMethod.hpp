@@ -95,10 +95,10 @@ enum { SUBMETHOD_DEFAULT=0, // no specification
        /// Type of hybrid meta-iterator:
        SUBMETHOD_COLLABORATIVE,   SUBMETHOD_EMBEDDED,   SUBMETHOD_SEQUENTIAL,
        // Sampling and DOE types:
-       SUBMETHOD_LHS,             SUBMETHOD_RANDOM,
-       SUBMETHOD_RANK_1_LATTICE,
-       SUBMETHOD_BOX_BEHNKEN,     SUBMETHOD_CENTRAL_COMPOSITE,
-       SUBMETHOD_GRID,            SUBMETHOD_OA_LHS,     SUBMETHOD_OAS,
+       SUBMETHOD_LHS,                      SUBMETHOD_RANDOM,
+       SUBMETHOD_LOW_DISCREPANCY_SAMPLING, SUBMETHOD_BOX_BEHNKEN,
+       SUBMETHOD_CENTRAL_COMPOSITE,        SUBMETHOD_GRID,            
+       SUBMETHOD_OA_LHS,                   SUBMETHOD_OAS,
        // MFMC and ACV numerical solutions:
        SUBMETHOD_MFMC, SUBMETHOD_ACV_IS, SUBMETHOD_ACV_MF, SUBMETHOD_ACV_RD,
        // Bayesian inference algorithms:
@@ -881,6 +881,8 @@ public:
   /// Wilks sided interval type
   short wilksSidedInterval;
 
+  /// Flag to indicate rank-1 lattice sampling
+  bool rank1LatticeFlag;
   /// Flag to indicate randomization of low-discrepancy sequence
   bool noRandomizeFlag;
   /// (log2 of) maximum number of points off low-discrepancy generator

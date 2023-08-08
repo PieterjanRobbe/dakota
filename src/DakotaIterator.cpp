@@ -519,8 +519,8 @@ Iterator::get_iterator(ProblemDescDB& problem_db, Model& model)
 //#endif
   case RANDOM_SAMPLING:
     switch (probDescDB.get_ushort("method.sample_type")) {
-    case SUBMETHOD_RANK_1_LATTICE:
-      return std::make_shared<NonDLowDiscrepancySampling<Rank1Lattice>>(problem_db, model); break;
+    case SUBMETHOD_LOW_DISCREPANCY_SAMPLING:
+      return std::make_shared<NonDLowDiscrepancySampling>(problem_db, model); break;
     default:
       return std::make_shared<NonDLHSSampling>(problem_db, model); break;
     }
@@ -933,34 +933,34 @@ static UShortStrBimap method_map =
 /// addition, only uni-directional mapping is supported)
 static UShortStrBimap submethod_map =
   boost::assign::list_of<UShortStrBimap::relation>
-  (HYBRID,                      "hybrid")
-  (SUBMETHOD_COLLABORATIVE,     "collaborative")
-  (SUBMETHOD_EMBEDDED,          "embedded")
-  (SUBMETHOD_SEQUENTIAL,        "sequential")
-  (SUBMETHOD_LHS,               "lhs")
-  (SUBMETHOD_RANDOM,            "random")
-  (SUBMETHOD_RANK_1_LATTICE,    "rank_1_lattice")
-  (SUBMETHOD_BOX_BEHNKEN,       "box_behnken")
-  (SUBMETHOD_CENTRAL_COMPOSITE, "central_composite")
-  (SUBMETHOD_GRID,              "grid")
-  (SUBMETHOD_OA_LHS,            "oa_lhs")
-  (SUBMETHOD_OAS,               "oas")
-  (SUBMETHOD_ACV_IS,            "acv_is")
-  (SUBMETHOD_ACV_MF,            "acv_mf")
-  (SUBMETHOD_ACV_RD,            "acv_rd")
-  (SUBMETHOD_DREAM,             "dream")
-  (SUBMETHOD_WASABI,            "wasabi")
-  (SUBMETHOD_GPMSA,             "gpmsa")
-  (SUBMETHOD_MUQ,               "muq")
-  (SUBMETHOD_QUESO,             "queso")
-  (SUBMETHOD_OPTPP,             "nip")
-  (SUBMETHOD_NPSOL,             "sqp")
-  (SUBMETHOD_EA,                "ea")
-  (SUBMETHOD_EGO,               "ego")
-  (SUBMETHOD_SBGO,              "sbgo")
-  (SUBMETHOD_CONVERGE_ORDER,    "converge_order")
-  (SUBMETHOD_CONVERGE_QOI,      "converge_qoi")
-  (SUBMETHOD_ESTIMATE_ORDER,    "estimate_order")
+  (HYBRID,                             "hybrid")
+  (SUBMETHOD_COLLABORATIVE,            "collaborative")
+  (SUBMETHOD_EMBEDDED,                 "embedded")
+  (SUBMETHOD_SEQUENTIAL,               "sequential")
+  (SUBMETHOD_LHS,                      "lhs")
+  (SUBMETHOD_RANDOM,                   "random")
+  (SUBMETHOD_LOW_DISCREPANCY_SAMPLING, "low_discrepancy")
+  (SUBMETHOD_BOX_BEHNKEN,              "box_behnken")
+  (SUBMETHOD_CENTRAL_COMPOSITE,        "central_composite")
+  (SUBMETHOD_GRID,                     "grid")
+  (SUBMETHOD_OA_LHS,                   "oa_lhs")
+  (SUBMETHOD_OAS,                      "oas")
+  (SUBMETHOD_ACV_IS,                   "acv_is")
+  (SUBMETHOD_ACV_MF,                   "acv_mf")
+  (SUBMETHOD_ACV_RD,                   "acv_rd")
+  (SUBMETHOD_DREAM,                    "dream")
+  (SUBMETHOD_WASABI,                   "wasabi")
+  (SUBMETHOD_GPMSA,                    "gpmsa")
+  (SUBMETHOD_MUQ,                      "muq")
+  (SUBMETHOD_QUESO,                    "queso")
+  (SUBMETHOD_OPTPP,                    "nip")
+  (SUBMETHOD_NPSOL,                    "sqp")
+  (SUBMETHOD_EA,                       "ea")
+  (SUBMETHOD_EGO,                      "ego")
+  (SUBMETHOD_SBGO,                     "sbgo")
+  (SUBMETHOD_CONVERGE_ORDER,           "converge_order")
+  (SUBMETHOD_CONVERGE_QOI,             "converge_qoi")
+  (SUBMETHOD_ESTIMATE_ORDER,           "estimate_order")
   ;
 
 

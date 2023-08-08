@@ -1,0 +1,173 @@
+/*  _______________________________________________________________________
+
+    DAKOTA: Design Analysis Kit for Optimization and Terascale Applications
+    Copyright 2014-2023
+    National Technology & Engineering Solutions of Sandia, LLC (NTESS).
+    This software is distributed under the GNU Lesser General Public License.
+    For more information, see the README file in the top Dakota directory.
+    _______________________________________________________________________ */
+
+//- Class:	     NonDLowDiscrepancySampling
+//- Description: Class to sample from low-discrepancy sequences
+//- Owner:       Pieterjan Robbe
+//- Checked by:
+//- Version:
+
+#include "dakota_data_types.hpp"
+#include "NonDLowDiscrepancySampling.hpp"
+#include "Rank1Lattice.hpp"
+
+namespace Dakota {
+
+/// default constructor
+NonDLowDiscrepancySampling::NonDLowDiscrepancySampling(
+  ProblemDescDB& problem_db,
+  Model& model
+) : 
+NonDLHSSampling(problem_db, model),
+sequence(
+  problem_db.get_bool("method.rank_1_lattice") ? 
+  new Rank1Lattice(problem_db) :
+  new Rank1Lattice(problem_db)
+), 
+colPtr(0)
+{
+
+}
+
+// default destructor
+NonDLowDiscrepancySampling::~NonDLowDiscrepancySampling( )
+{
+
+}
+
+/// Use the distributions and/or bounds in the given model to generate
+/// the rank-1 lattice points
+void NonDLowDiscrepancySampling::get_parameter_sets(
+  Model& model
+)
+{
+  get_parameter_sets(model, numSamples, allSamples);
+}
+
+/// Same as above, but store the lattice points in the given matrix
+void NonDLowDiscrepancySampling::get_parameter_sets(
+  Model& model,
+  const size_t num_samples, 
+  RealMatrix& sample_matrix
+)
+{
+  get_parameter_sets(model, num_samples, sample_matrix, true);
+}
+                        
+/// Same as above, but allow verbose outputs
+void NonDLowDiscrepancySampling::get_parameter_sets(
+  Model& model,
+  const size_t num_samples,
+  RealMatrix& sample_matrix,
+  bool write_message
+)
+{
+
+  /// Only uniform low-discrepancy sampling is allowed for now
+  switch (samplingVarsMode) {
+    case ACTIVE:
+    case ACTIVE_UNIFORM:
+    case ALL_UNIFORM:
+    case UNCERTAIN_UNIFORM:
+    case ALEATORY_UNCERTAIN_UNIFORM:
+    case EPISTEMIC_UNCERTAIN_UNIFORM:
+    {
+      /// Only uniform sampling has been implemented for now
+      if ( samplingVarsMode == ACTIVE )
+      {
+        Pecos::MultivariateDistribution& mv_dist
+          = model.multivariate_distribution();
+        std::vector<Pecos::RandomVariable>& variables
+          = mv_dist.random_variables();
+        for ( Pecos::RandomVariable variable : variables )
+        {
+          if ( variable.type() != Pecos::UNIFORM )
+          {
+            Cerr << "\nError: only uniform low-discrepancy sampling has been "
+              << "implemented." << std::endl;
+              abort_handler(METHOD_ERROR);
+          }
+        }
+      }
+
+      /// Generate the points of this low-discrepancy sequence
+      sequence->get_points(colPtr, colPtr + num_samples, sample_matrix);
+
+      /// Scale points from [0, 1) to the model's lower and upper bounds
+      const RealVector& lower = model.all_continuous_lower_bounds();
+      const RealVector& upper = model.all_continuous_upper_bounds();
+      scale(sample_matrix, lower, upper);
+
+      break;
+    }
+    default:
+    {
+      Cerr << "\nError: this sampling mode has not been implemented yet." 
+        << std::endl;
+      abort_handler(METHOD_ERROR);
+    }
+  }
+
+  /// Update `colPtr` when using refinement samples
+  if ( allSamples.numCols() != sample_matrix.numCols() )
+    colPtr += num_samples;
+}
+
+/// Generate a set of rank-1 lattice points using the given lower and upper
+/// bounds and store the results in `allSamples`
+void NonDLowDiscrepancySampling::get_parameter_sets(
+  const RealVector& lower,
+  const RealVector& upper
+)
+{
+  /// Generate the points of this low-discrepancy sequence
+  sequence->get_points(allSamples.numCols(), allSamples);
+
+  /// Scale points from [0, 1) to the model's lower and upper bounds
+  scale(allSamples, lower, upper);
+}
+
+/// Generate a set of normally-distributed points by mapping the rank-1
+/// lattice points using the inverse normal cdf
+void NonDLowDiscrepancySampling::get_parameter_sets(
+  const RealVector& means,
+  const RealVector& std_devs,
+  const RealVector& lower,
+  const RealVector& upper,
+  RealSymMatrix& correl
+)
+{
+  Cout << "\n\n\n ERROR: This function is not implemented yet."
+    << std::endl;
+  abort_handler(METHOD_ERROR);
+}
+
+/// Function to scale a given sample matrix from [0, 1) to the given lower
+/// and upper bounds
+/// Assumes that the sample matrix has shape `numParams` x `numSamples`
+void NonDLowDiscrepancySampling::scale(
+  RealMatrix& sample_matrix,
+  const RealVector& lower,
+  const RealVector& upper
+)
+{
+  auto numParams = sample_matrix.numRows();
+  auto numSamples = sample_matrix.numCols();
+  for (size_t col=0; col < sample_matrix.numCols(); col++)
+  {
+    for (size_t row=0; row < sample_matrix.numRows(); row++)
+    {
+      Real u = upper[row];
+      Real l = lower[row];
+      sample_matrix[col][row] = sample_matrix[col][row]*(u - l) + l;
+    }
+  }
+}
+
+} // namespace Dakota

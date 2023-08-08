@@ -2695,6 +2695,7 @@ bool ProblemDescDB::get_bool(const String& entry_name) const
       {"tolerance_intervals", P_MET toleranceIntervalsFlag},
       {"variance_based_decomp", P_MET vbdFlag},
       {"wilks", P_MET wilksFlag},
+      {"rank_1_lattice", P_MET rank1LatticeFlag},
       {"no_randomize", P_MET noRandomizeFlag},
       {"kuo", P_MET kuo},
       {"cools_kuo_nuyens", P_MET cools_kuo_nuyens},

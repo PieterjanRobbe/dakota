@@ -506,19 +506,18 @@ set(iterator_src DakotaIterator.cpp DakotaAnalyzer.cpp DakotaPStudyDACE.cpp
     NonDMultilevelPolynomialChaos.cpp NonDMultilevelStochCollocation.cpp
     NonDSurrogateExpansion.cpp NonDCalibration.cpp NonDBayesCalibration.cpp
     NonDWASABIBayesCalibration.cpp NonDSampling.cpp NonDLHSSampling.cpp 
-    NonDEnsembleSampling.cpp NonDHierarchSampling.cpp
-    NonDMultilevelSampling.cpp NonDMultilevControlVarSampling.cpp
-    NonDNonHierarchSampling.cpp NonDACVSampling.cpp NonDGenACVSampling.cpp
-    NonDMultifidelitySampling.cpp NonDAdaptImpSampling.cpp
-    NonDGPImpSampling.cpp NonDPOFDarts.cpp NonDRKDDarts.cpp DakotaMinimizer.cpp
-    DakotaOptimizer.cpp DakotaTraitsBase.cpp DakotaLeastSq.cpp
-    NonlinearCGOptimizer.cpp  SurrBasedMinimizer.cpp
-    SurrBasedLocalMinimizer.cpp SurrBasedLevelData.cpp
+    NonDLowDiscrepancySampling.cpp NonDEnsembleSampling.cpp
+    NonDHierarchSampling.cpp NonDMultilevelSampling.cpp
+    NonDMultilevControlVarSampling.cpp NonDNonHierarchSampling.cpp
+    NonDACVSampling.cpp NonDGenACVSampling.cpp NonDMultifidelitySampling.cpp
+    NonDAdaptImpSampling.cpp NonDGPImpSampling.cpp NonDPOFDarts.cpp
+    NonDRKDDarts.cpp DakotaMinimizer.cpp DakotaOptimizer.cpp
+    DakotaTraitsBase.cpp DakotaLeastSq.cpp NonlinearCGOptimizer.cpp
+    SurrBasedMinimizer.cpp SurrBasedLocalMinimizer.cpp SurrBasedLevelData.cpp
     HierarchSurrBasedLocalMinimizer.cpp DataFitSurrBasedLocalMinimizer.cpp
     SurrBasedGlobalMinimizer.cpp EffGlobalMinimizer.cpp OptDartsOptimizer.cpp
     MetaIterator.cpp ConcurrentMetaIterator.cpp SeqHybridMetaIterator.cpp
-    EmbedHybridMetaIterator.cpp CollabHybridMetaIterator.cpp
-    Rank1Lattice.cpp
+    EmbedHybridMetaIterator.cpp CollabHybridMetaIterator.cpp Rank1Lattice.cpp
 )
 set(Dakota_src_fortran lawson_hanson1.f)
 if(DAKOTA_F90)

@@ -2693,7 +2693,7 @@ KEYWORD method {N_mdm3(start,0,stop)}
       |
       incremental_random {N_mdm(utype,sampleType_SUBMETHOD_RANDOM)}
       |
-      rank_1_lattice {N_mdm(utype,sampleType_SUBMETHOD_RANK_1_LATTICE)}
+      low_discrepancy {N_mdm(utype,sampleType_SUBMETHOD_LOW_DISCREPANCY_SAMPLING)}
      ]
     [ refinement_samples INTEGERLIST {N_mdm(ivec,refineSamples)} ]
     [ d_optimal {N_mdm(true,dOptimal)}
@@ -2703,25 +2703,27 @@ KEYWORD method {N_mdm3(start,0,stop)}
         leja_oversample_ratio REAL {N_mdm(Real,collocationRatio)}
        ]
      ]
-    [ low_discrepancy {0}
-      [ no_randomize {N_mdm(true,noRandomizeFlag)} ]
-      [ m_max INTEGER >= 0 {N_mdm(int,log2MaxPoints)} ]
-      [ generating_vector {0}
-        inline INTEGERLIST {N_mdm(ivec,generatingVector)}
-        |
-        file STRING {N_mdm(str,generatingVectorFileName)}
-        |
-        ( predefined {0}
-          kuo {N_mdm(true,kuo)}
+    [ 
+      ( rank_1_lattice {N_mdm(true,rank1LatticeFlag)}
+        [ no_randomize {N_mdm(true,noRandomizeFlag)} ]
+        [ m_max INTEGER >= 0 {N_mdm(int,log2MaxPoints)} ]
+        [ generating_vector {0}
+          inline INTEGERLIST {N_mdm(ivec,generatingVector)}
           |
-          cools_kuo_nuyens {N_mdm(true,cools_kuo_nuyens)}
-         )
-       ]
-      [ ordering {0}
-        natural {N_mdm(true,naturalOrdering)}
-        |
-        radical_inverse {N_mdm(true,radicalInverseOrdering)}
-       ]
+          file STRING {N_mdm(str,generatingVectorFileName)}
+          |
+          ( predefined {0}
+            kuo {N_mdm(true,kuo)}
+            |
+            cools_kuo_nuyens {N_mdm(true,cools_kuo_nuyens)}
+           )
+         ]
+        [ ordering {0}
+          natural {N_mdm(true,naturalOrdering)}
+          |
+          radical_inverse {N_mdm(true,radicalInverseOrdering)}
+         ]
+       )
      ]
     [ variance_based_decomp {N_mdm(true,vbdFlag)}
       [ drop_tolerance REAL {N_mdm(Real,vbdDropTolerance)} ]
