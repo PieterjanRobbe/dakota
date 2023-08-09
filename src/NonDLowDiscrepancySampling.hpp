@@ -116,13 +116,21 @@ private:
   /// refinement samples
   int colPtr;
 
-  /// Function to scale a given sample matrix from [0, 1) to the given lower
-  /// and upper bounds
+  /// Function to scale a given sample matrix from [0, 1) to the probability
+  /// density functions given in the model
   /// Assumes that the sample matrix has shape `numParams` x `numSamples`
   void scale(
-    RealMatrix& sample_matrix,
+    Model& model,
+    RealMatrix& sample_matrix
+  );
+
+  /// Function to scale a given sample matrix from [0, 1) to the given lower and
+  /// upper bounds
+  /// Assumes that the sample matrix has shape `numParams` x `numSamples`
+  void scale(
     const RealVector& lower,
-    const RealVector& upper
+    const RealVector& upper,
+    RealMatrix& sample_matrix
   );
   
 };
