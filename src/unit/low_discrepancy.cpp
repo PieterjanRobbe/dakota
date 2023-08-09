@@ -582,24 +582,27 @@ BOOST_AUTO_TEST_CASE(check_random_seed_lattice)
   }
 }
 
-// +-------------------------------------------------------------------------+
-// |            Cannot sample from other distributions than uniform          |
-// +-------------------------------------------------------------------------+
-BOOST_AUTO_TEST_CASE(check_throws_normal_distribution)
-{
-  // Make sure an exception is thrown instead of an exit code
-  Dakota::abort_mode = Dakota::ABORT_THROWS;
 
+// +-------------------------------------------------------------------------+
+// |                   Check transformed uniform samples                     |
+// +-------------------------------------------------------------------------+
+BOOST_AUTO_TEST_CASE(check_transformed_uniform_samples)
+{
   // Example dakota input specification
   static const char dakota_input[] =
     "environment \n"
+    "    tabular_data \n"
+    "    tabular_data_file = 'samples.dat' \n"
+    "    freeform \n"
     "method \n"
     "  sampling \n"
     "    sample_type low_discrepancy \n"
+    "    samples 4 \n"
+    "    rank_1_lattice no_randomize \n"
     "variables \n"
-    "  normal_uncertain = 2 \n"
-    "    means = 0.0 0.0 \n"
-    "    std_deviations = 1.0 1.0 \n"
+    "  uniform_uncertain = 2 \n"
+    "    lower_bounds = -1.0 0.0 \n"
+    "    upper_bounds =  1.0 2.0 \n"
     "interface \n"
     "    analysis_drivers = 'genz' \n"
     "    analysis_components = 'cp1' \n"
@@ -613,13 +616,71 @@ BOOST_AUTO_TEST_CASE(check_throws_normal_distribution)
   std::shared_ptr<Dakota::LibraryEnvironment> p_env(Dakota::Opt_TPL_Test::create_env(dakota_input));
   Dakota::LibraryEnvironment& env = *p_env;
 
-  // Check that normal random variables throws an exception
-  Dakota::RealMatrix points(2, 1);
-  BOOST_CHECK_THROW(
-    env.execute(),
-    std::system_error
+  // Execute the environment
+  env.execute();
+
+  // Read in the tabular output file
+  const std::string tabular_data_name = "samples.dat";
+  Dakota::RealMatrix samples;
+  Dakota::TabularIO::read_data_tabular(
+    tabular_data_name, "", samples, 4, 3, Dakota::TABULAR_NONE, true
   );
+
+  // Exact values
+  double exact[4][2] =
+  {
+    {-1,   0, },
+    { 0,   1  },
+    {-0.5, 1.5},
+    { 0.5, 0.5}
+  };
+
+  // Check values of the lattice points
+  for ( size_t row = 0; row < 4; row++  ) {
+    for( size_t col = 0; col < 2; col++) {
+      BOOST_CHECK_CLOSE(samples[col][row], exact[row][col], 1e-4);
+    }
+  }
 }
+
+// // +-------------------------------------------------------------------------+
+// // |            Cannot sample from other distributions than uniform          |
+// // +-------------------------------------------------------------------------+
+// BOOST_AUTO_TEST_CASE(check_throws_normal_distribution)
+// {
+//   // Make sure an exception is thrown instead of an exit code
+//   Dakota::abort_mode = Dakota::ABORT_THROWS;
+
+//   // Example dakota input specification
+//   static const char dakota_input[] =
+//     "environment \n"
+//     "method \n"
+//     "  sampling \n"
+//     "    sample_type low_discrepancy \n"
+//     "variables \n"
+//     "  normal_uncertain = 2 \n"
+//     "    means = 0.0 0.0 \n"
+//     "    std_deviations = 1.0 1.0 \n"
+//     "interface \n"
+//     "    analysis_drivers = 'genz' \n"
+//     "    analysis_components = 'cp1' \n"
+//     "    direct \n"
+//     "responses \n"
+//     "  response_functions = 1 \n"
+//     "  no_gradients \n"
+//     "  no_hessians \n";
+
+//   // Get problem description
+//   std::shared_ptr<Dakota::LibraryEnvironment> p_env(Dakota::Opt_TPL_Test::create_env(dakota_input));
+//   Dakota::LibraryEnvironment& env = *p_env;
+
+//   // Check that normal random variables throws an exception
+//   Dakota::RealMatrix points(2, 1);
+//   BOOST_CHECK_THROW(
+//     env.execute(),
+//     std::system_error
+//   );
+// }
 
 } // end namespace TestRank1Lattice
 

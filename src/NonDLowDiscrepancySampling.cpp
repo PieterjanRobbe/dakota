@@ -101,12 +101,7 @@ void NonDLowDiscrepancySampling::get_parameter_sets(
       sequence->get_points(colPtr, colPtr + num_samples, sample_matrix);
 
       /// Scale points from [0, 1) to the marginal model distributions
-      scale(model, sample_matrix);
-
-      /// Scale points from [0, 1) to the model's lower and upper bounds
-      // const RealVector& lower = model.all_continuous_lower_bounds();
-      // const RealVector& upper = model.all_continuous_upper_bounds();
-      // scale(sample_matrix, lower, upper);
+      transform(model, sample_matrix);
 
       break;
     }
@@ -152,10 +147,10 @@ void NonDLowDiscrepancySampling::get_parameter_sets(
   abort_handler(METHOD_ERROR);
 }
 
-/// Function to scale a given sample matrix from [0, 1) to the probability
+/// Function to transform a given sample matrix from [0, 1) to the probability
 /// density functions given in the model
 /// Assumes that the sample matrix has shape `numParams` x `numSamples`
-void NonDLowDiscrepancySampling::scale(
+void NonDLowDiscrepancySampling::transform(
   Model& model,
   RealMatrix& sample_matrix
 )
