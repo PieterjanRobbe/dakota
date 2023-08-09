@@ -25,6 +25,367 @@ namespace DakotaUnitTest {
 namespace TestLowDiscrepancy {
 
 //
+//  Tests for NonDLowDiscrepancySampling
+//
+namespace TestNonDLowDiscrepancySampling {
+
+
+// +-------------------------------------------------------------------------+
+// |                         Check valid input file                          |
+// +-------------------------------------------------------------------------+
+BOOST_AUTO_TEST_CASE(check_valid_input_file)
+{
+  // Example dakota input specification
+  char dakota_input[] =
+    "environment \n"
+    "    tabular_data \n"
+    "    tabular_data_file = 'samples.dat' \n"
+    "    freeform \n"
+    "method \n"
+    "  sampling \n"
+    "    sample_type low_discrepancy \n"
+    "    samples 4 \n"
+    "    rank_1_lattice no_randomize \n"
+    "variables \n"
+    "  uniform_uncertain = 2 \n"
+    "    lower_bounds = 0.0 0.0 \n"
+    "    upper_bounds = 1.0 1.0 \n"
+    "interface \n"
+    "    analysis_drivers = 'genz' \n"
+    "    analysis_components = 'cp1' \n"
+    "    direct \n"
+    "responses \n"
+    "  response_functions = 1 \n"
+    "  no_gradients \n"
+    "  no_hessians \n";
+
+  // Get problem description
+  std::shared_ptr<Dakota::LibraryEnvironment> p_env(Dakota::Opt_TPL_Test::create_env(dakota_input));
+  Dakota::LibraryEnvironment& env = *p_env;
+
+  // Execute the environment
+  env.execute();
+
+  // Read in the tabular output file
+  const std::string tabular_data_name = "samples.dat";
+  Dakota::RealMatrix samples;
+  Dakota::TabularIO::read_data_tabular(
+    tabular_data_name, "", samples, 4, 3, Dakota::TABULAR_NONE, true
+  );
+
+  // Exact values
+  double exact[4][3] =
+  {
+    {0,     0,     1},
+    {0.5,   0.5,   0.702332},
+    {0.25,  0.75,  0.646911},
+    {0.75,  0.25,  0.764268}
+  };
+
+  // Check values of the lattice points
+  for ( size_t row = 0; row < 4; row++  )
+  {
+    for( size_t col = 0; col < 3; col++)
+    {
+      BOOST_CHECK_CLOSE(samples[col][row], exact[row][col], 1e-4);
+    }
+  }
+}
+
+// +-------------------------------------------------------------------------+
+// |                           Refinement samples                            |
+// +-------------------------------------------------------------------------+
+BOOST_AUTO_TEST_CASE(check_refinement_samples)
+{
+  // Example dakota input specification
+  char dakota_input[] =
+    "environment \n"
+    "    tabular_data \n"
+    "    tabular_data_file = 'samples.dat' \n"
+    "    freeform \n"
+    "method \n"
+    "  sampling \n"
+    "    sample_type low_discrepancy \n"
+    "    samples 2 \n"
+    "    refinement_samples 2 4 \n"
+    "    rank_1_lattice no_randomize \n"
+    "variables \n"
+    "  uniform_uncertain = 2 \n"
+    "    lower_bounds = 0.0 0.0 \n"
+    "    upper_bounds = 1.0 1.0 \n"
+    "interface \n"
+    "    analysis_drivers = 'genz' \n"
+    "    analysis_components = 'cp1' \n"
+    "    direct \n"
+    "responses \n"
+    "  response_functions = 1 \n"
+    "  no_gradients \n"
+    "  no_hessians \n";
+
+  // Get problem description
+  std::shared_ptr<Dakota::LibraryEnvironment> p_env(Dakota::Opt_TPL_Test::create_env(dakota_input));
+  Dakota::LibraryEnvironment& env = *p_env;
+
+  // Execute the environment
+  env.execute();
+
+  // Read in the tabular output file
+  const std::string tabular_data_name = "samples.dat";
+  Dakota::RealMatrix samples;
+  Dakota::TabularIO::read_data_tabular(
+    tabular_data_name, "", samples, 8, 3, Dakota::TABULAR_NONE, true
+  );
+
+  // Exact values
+  double exact[8][3] =
+  {
+    {0,     0,     1},
+    {0.5,   0.5,   0.702332},
+    {0.25,  0.75,  0.646911},
+    {0.75,  0.25,  0.764268},
+    {0.125, 0.375, 0.797981},
+    {0.625, 0.875, 0.574206},
+    {0.375, 0.125, 0.871597},
+    {0.875, 0.625, 0.621378}
+  };
+
+  // Check values of the lattice points
+  for ( size_t row = 0; row < 8; row++  )
+  {
+    for( size_t col = 0; col < 3; col++)
+    {
+      BOOST_CHECK_CLOSE(samples[col][row], exact[row][col], 1e-4);
+    }
+  }
+}
+
+// +-------------------------------------------------------------------------+
+// |                      Check normal random samples                        |
+// +-------------------------------------------------------------------------+
+BOOST_AUTO_TEST_CASE(check_normal_random_samples)
+{
+  // Example dakota input specification
+  char dakota_input[] =
+    "environment \n"
+    "    tabular_data \n"
+    "    tabular_data_file = 'samples.dat' \n"
+    "    freeform \n"
+    "method \n"
+    "  sampling \n"
+    "    sample_type low_discrepancy \n"
+    "    samples = 10000 \n"
+    "    seed = 2023 \n"
+    "variables \n"
+    "  normal_uncertain = 2 \n"
+    "    means = 0.0 1.0 \n"
+    "    std_deviations = 1.0 0.5 \n"
+    "interface \n"
+    "    analysis_drivers = 'genz' \n"
+    "    analysis_components = 'cp1' \n"
+    "    direct \n"
+    "responses \n"
+    "  response_functions = 1 \n"
+    "  no_gradients \n"
+    "  no_hessians \n";
+
+  // Get problem description
+  std::shared_ptr<Dakota::LibraryEnvironment> p_env(Dakota::Opt_TPL_Test::create_env(dakota_input));
+  Dakota::LibraryEnvironment& env = *p_env;
+
+  // Execute the environment
+  env.execute();
+
+  // Read in the tabular output file
+  const std::string tabular_data_name = "samples.dat";
+  Dakota::RealMatrix samples;
+  int NB_OF_SAMPLES = 10000;
+  Dakota::TabularIO::read_data_tabular(
+    tabular_data_name, "", samples, NB_OF_SAMPLES, 3, Dakota::TABULAR_NONE, true
+  );
+
+  // Compute mean values
+  double m1 = 0;
+  double m2 = 0;
+  for ( size_t j = 0; j < NB_OF_SAMPLES; j++ )
+  {
+    m1 += samples[0][j] / NB_OF_SAMPLES;
+    m2 += samples[1][j] / NB_OF_SAMPLES;
+  }
+
+  // Compute standard deviations
+  double s1 = 0;
+  double s2 = 0;
+  for ( size_t j = 0; j < NB_OF_SAMPLES; j++ )
+  {
+    s1 += (samples[0][j] - m1)*(samples[0][j] - m1);
+    s2 += (samples[1][j] - m2)*(samples[1][j] - m2);
+  }
+  s1 = std::sqrt(s1 / (NB_OF_SAMPLES - 1));
+  s2 = std::sqrt(s2 / (NB_OF_SAMPLES - 1));
+
+  // Check values
+  double TOL = 1e-3;
+  BOOST_CHECK_SMALL(std::abs(m1 - 0), TOL);
+  BOOST_CHECK_SMALL(std::abs(m2 - 1), TOL);
+  BOOST_CHECK_SMALL(std::abs(s1 - 1), TOL);
+  BOOST_CHECK_SMALL(std::abs(s2 - 0.5), TOL);
+}
+
+// +-------------------------------------------------------------------------+
+// |                   Check transformed uniform samples                     |
+// +-------------------------------------------------------------------------+
+BOOST_AUTO_TEST_CASE(check_transformed_uniform_samples)
+{
+  // Example dakota input specification
+  char dakota_input[] =
+    "environment \n"
+    "    tabular_data \n"
+    "    tabular_data_file = 'samples.dat' \n"
+    "    freeform \n"
+    "method \n"
+    "  sampling \n"
+    "    sample_type low_discrepancy \n"
+    "    samples 4 \n"
+    "    rank_1_lattice no_randomize \n"
+    "variables \n"
+    "  uniform_uncertain = 2 \n"
+    "    lower_bounds = -1.0 0.0 \n"
+    "    upper_bounds =  1.0 2.0 \n"
+    "interface \n"
+    "    analysis_drivers = 'genz' \n"
+    "    analysis_components = 'cp1' \n"
+    "    direct \n"
+    "responses \n"
+    "  response_functions = 1 \n"
+    "  no_gradients \n"
+    "  no_hessians \n";
+
+  // Get problem description
+  std::shared_ptr<Dakota::LibraryEnvironment> p_env(Dakota::Opt_TPL_Test::create_env(dakota_input));
+  Dakota::LibraryEnvironment& env = *p_env;
+
+  // Execute the environment
+  env.execute();
+
+  // Read in the tabular output file
+  const std::string tabular_data_name = "samples.dat";
+  Dakota::RealMatrix samples;
+  Dakota::TabularIO::read_data_tabular(
+    tabular_data_name, "", samples, 4, 3, Dakota::TABULAR_NONE, true
+  );
+
+  // Exact values
+  double exact[4][2] =
+  {
+    {-1,   0, },
+    { 0,   1  },
+    {-0.5, 1.5},
+    { 0.5, 0.5}
+  };
+
+  // Check values of the lattice points
+  for ( size_t row = 0; row < 4; row++ )
+  {
+    for( size_t col = 0; col < 2; col++ )
+    {
+      BOOST_CHECK_CLOSE(samples[col][row], exact[row][col], 1e-4);
+    }
+  }
+}
+
+// +-------------------------------------------------------------------------+
+// |                 Cannot sample correlated distributions                  |
+// +-------------------------------------------------------------------------+
+BOOST_AUTO_TEST_CASE(check_correlated_distributions)
+{
+  // Example dakota input specification
+  char dakota_input[] =
+    "environment \n"
+    "    tabular_data \n"
+    "    tabular_data_file = 'samples.dat' \n"
+    "    freeform \n"
+    "method \n"
+    "  sampling \n"
+    "    sample_type low_discrepancy \n"
+    "    samples 4 \n"
+    "    rank_1_lattice no_randomize \n"
+    "variables \n"
+    "  normal_uncertain = 2 \n"
+    "  means = 0.0 0.0 \n"
+    "  std_deviations = 1.0 1.0 \n"
+    "    uncertain_correlation_matrix \n"
+    "    1.0 0.5 \n"
+    "    0.5 1.0 \n"
+    "interface \n"
+    "    analysis_drivers = 'genz' \n"
+    "    analysis_components = 'cp1' \n"
+    "    direct \n"
+    "responses \n"
+    "  response_functions = 1 \n"
+    "  no_gradients \n"
+    "  no_hessians \n";
+
+  // Get problem description
+  std::shared_ptr<Dakota::LibraryEnvironment> p_env(Dakota::Opt_TPL_Test::create_env(dakota_input));
+  Dakota::LibraryEnvironment& env = *p_env;
+
+  // Check that correlated random variables throws an exception
+  Dakota::RealMatrix points(2, 1);
+  BOOST_CHECK_THROW(
+    env.execute(),
+    std::system_error
+  );
+}
+
+// +-------------------------------------------------------------------------+
+// |                 Cannot sample discrete distributions                  |
+// +-------------------------------------------------------------------------+
+BOOST_AUTO_TEST_CASE(check_discrete_distributions)
+{
+  // Example dakota input specification
+  char dakota_input[] =
+    "environment \n"
+    "    tabular_data \n"
+    "    tabular_data_file = 'samples.dat' \n"
+    "    freeform \n"
+    "method \n"
+    "  sampling \n"
+    "    sample_type low_discrepancy \n"
+    "    samples 4 \n"
+    "    rank_1_lattice no_randomize \n"
+    "variables \n"
+    "  weibull_uncertain = 1 \n"
+    "    alphas = 1.0 \n"
+    "    betas = 1.5 \n"
+    "  discrete_design_set \n "
+    "    integer = 3 \n "
+    "      initial_point 0 0 0 \n "
+    "      num_set_values = 5 5 5 \n "
+    "      set_values = -4 -2 0 2 4 -4 -2 0 2 4 -4 -2 0 2 4 \n "
+    "interface \n"
+    "    analysis_drivers = 'genz' \n"
+    "    analysis_components = 'cp1' \n"
+    "    direct \n"
+    "responses \n"
+    "  response_functions = 1 \n"
+    "  no_gradients \n"
+    "  no_hessians \n";
+
+  // Get problem description
+  std::shared_ptr<Dakota::LibraryEnvironment> p_env(Dakota::Opt_TPL_Test::create_env(dakota_input));
+  Dakota::LibraryEnvironment& env = *p_env;
+
+  // Check that correlated random variables throws an exception
+  Dakota::RealMatrix points(2, 1);
+  BOOST_CHECK_THROW(
+    env.execute(),
+    std::system_error
+  );
+}
+
+} // end namespace TestLowDiscrepancySampling
+
+//
 //  Tests for rank-1 lattice rules
 //
 namespace TestRank1Lattice {
@@ -128,11 +489,9 @@ BOOST_AUTO_TEST_CASE(check_throws_mMax_in_input_file)
   Dakota::abort_mode = Dakota::ABORT_THROWS;
 
   // Example dakota input specification
-  static const char dakota_input[] =
+  char dakota_input[] =
     "environment \n"
     "method \n"
-    "  output \n"
-    "    silent \n"
     "  sampling \n"
     "    sample_type low_discrepancy \n"
     "    rank_1_lattice \n"
@@ -198,7 +557,6 @@ BOOST_AUTO_TEST_CASE(check_throws_max_dimension_exceeded)
     Dakota::cools_kuo_nuyens_d250_m20,
     6
   );
-  std::cout << "generatingVector.length is " << generatingVector.length() << std::endl;
 
   // Get a lattice rule
   Dakota::Rank1Lattice lattice(generatingVector, 20);
@@ -231,149 +589,14 @@ BOOST_AUTO_TEST_CASE(check_throws_mismatched_samples_matrix)
 }
 
 // +-------------------------------------------------------------------------+
-// |                         Check valid input file                          |
-// +-------------------------------------------------------------------------+
-BOOST_AUTO_TEST_CASE(check_valid_input_file)
-{
-  // Example dakota input specification
-  static const char dakota_input[] =
-    "environment \n"
-    "    tabular_data \n"
-    "    tabular_data_file = 'samples.dat' \n"
-    "    freeform \n"
-    "method \n"
-    "  output \n"
-    "    silent \n"
-    "  sampling \n"
-    "    sample_type low_discrepancy \n"
-    "    samples 4 \n"
-    "    rank_1_lattice no_randomize \n"
-    "variables \n"
-    "  uniform_uncertain = 2 \n"
-    "    lower_bounds = 0.0 0.0 \n"
-    "    upper_bounds = 1.0 1.0 \n"
-    "interface \n"
-    "    analysis_drivers = 'genz' \n"
-    "    analysis_components = 'cp1' \n"
-    "    direct \n"
-    "responses \n"
-    "  response_functions = 1 \n"
-    "  no_gradients \n"
-    "  no_hessians \n";
-
-  // Get problem description
-  std::shared_ptr<Dakota::LibraryEnvironment> p_env(Dakota::Opt_TPL_Test::create_env(dakota_input));
-  Dakota::LibraryEnvironment& env = *p_env;
-
-  // Execute the environment
-  env.execute();
-
-  // Read in the tabular output file
-  const std::string tabular_data_name = "samples.dat";
-  Dakota::RealMatrix samples;
-  Dakota::TabularIO::read_data_tabular(
-    tabular_data_name, "", samples, 4, 3, Dakota::TABULAR_NONE, true
-  );
-
-  // Exact values
-  double exact[4][3] =
-  {
-    {0,     0,     1},
-    {0.5,   0.5,   0.702332},
-    {0.25,  0.75,  0.646911},
-    {0.75,  0.25,  0.764268}
-  };
-
-  // Check values of the lattice points
-  for ( size_t row = 0; row < 4; row++  )
-  {
-    for( size_t col = 0; col < 3; col++)
-    {
-      BOOST_CHECK_CLOSE(samples[col][row], exact[row][col], 1e-4);
-    }
-  }
-}
-
-// +-------------------------------------------------------------------------+
-// |                           Refinement samples                            |
-// +-------------------------------------------------------------------------+
-BOOST_AUTO_TEST_CASE(check_refinement_samples)
-{
-  // Example dakota input specification
-  static const char dakota_input[] =
-    "environment \n"
-    "    tabular_data \n"
-    "    tabular_data_file = 'samples.dat' \n"
-    "    freeform \n"
-    "method \n"
-    "  output \n"
-    "    silent \n"
-    "  sampling \n"
-    "    sample_type low_discrepancy \n"
-    "    samples 2 \n"
-    "    refinement_samples 2 4 \n"
-    "    rank_1_lattice no_randomize \n"
-    "variables \n"
-    "  uniform_uncertain = 2 \n"
-    "    lower_bounds = 0.0 0.0 \n"
-    "    upper_bounds = 1.0 1.0 \n"
-    "interface \n"
-    "    analysis_drivers = 'genz' \n"
-    "    analysis_components = 'cp1' \n"
-    "    direct \n"
-    "responses \n"
-    "  response_functions = 1 \n"
-    "  no_gradients \n"
-    "  no_hessians \n";
-
-  // Get problem description
-  std::shared_ptr<Dakota::LibraryEnvironment> p_env(Dakota::Opt_TPL_Test::create_env(dakota_input));
-  Dakota::LibraryEnvironment& env = *p_env;
-
-  // Execute the environment
-  env.execute();
-
-  // Read in the tabular output file
-  const std::string tabular_data_name = "samples.dat";
-  Dakota::RealMatrix samples;
-  Dakota::TabularIO::read_data_tabular(
-    tabular_data_name, "", samples, 8, 3, Dakota::TABULAR_NONE, true
-  );
-
-  // Exact values
-  double exact[8][3] =
-  {
-    {0,     0,     1},
-    {0.5,   0.5,   0.702332},
-    {0.25,  0.75,  0.646911},
-    {0.75,  0.25,  0.764268},
-    {0.125, 0.375, 0.797981},
-    {0.625, 0.875, 0.574206},
-    {0.375, 0.125, 0.871597},
-    {0.875, 0.625, 0.621378}
-  };
-
-  // Check values of the lattice points
-  for ( size_t row = 0; row < 8; row++  )
-  {
-    for( size_t col = 0; col < 3; col++)
-    {
-      BOOST_CHECK_CLOSE(samples[col][row], exact[row][col], 1e-4);
-    }
-  }
-}
-
-// +-------------------------------------------------------------------------+
 // |                        Inline generating vector                         |
 // +-------------------------------------------------------------------------+
 BOOST_AUTO_TEST_CASE(check_inline_generating_vector)
 {
   // Example dakota input specification
-  static const char dakota_input[] =
+  char dakota_input[] =
     "environment \n"
     "method \n"
-    "  output \n"
-    "    silent \n"
     "  sampling \n"
     "    sample_type low_discrepancy \n"
     "    samples 32 \n"
@@ -413,11 +636,9 @@ BOOST_AUTO_TEST_CASE(check_generating_vector_from_file)
   file.close();
 
   // Example dakota input specification
-  static const char dakota_input[] =
+  char dakota_input[] =
     "environment \n"
     "method \n"
-    "  output \n"
-    "    silent \n"
     "  sampling \n"
     "    sample_type low_discrepancy \n"
     "    samples 16 \n"
@@ -597,187 +818,6 @@ BOOST_AUTO_TEST_CASE(check_random_seed_lattice)
     }
   }
 }
-
-// +-------------------------------------------------------------------------+
-// |                      Check normal random samples                        |
-// +-------------------------------------------------------------------------+
-BOOST_AUTO_TEST_CASE(check_normal_random_samples)
-{
-  // Example dakota input specification
-  static const char dakota_input[] =
-    "environment \n"
-    "    tabular_data \n"
-    "    tabular_data_file = 'samples.dat' \n"
-    "    freeform \n"
-    "method \n"
-    "  output \n"
-    "    silent \n"
-    "  sampling \n"
-    "    sample_type low_discrepancy \n"
-    "    samples 10000 \n"
-    "variables \n"
-    "  normal_uncertain = 2 \n"
-    "    means = 0.0 1.0 \n"
-    "    std_deviations = 1.0 0.5 \n"
-    "interface \n"
-    "    analysis_drivers = 'genz' \n"
-    "    analysis_components = 'cp1' \n"
-    "    direct \n"
-    "responses \n"
-    "  response_functions = 1 \n"
-    "  no_gradients \n"
-    "  no_hessians \n";
-
-  // Get problem description
-  std::shared_ptr<Dakota::LibraryEnvironment> p_env(Dakota::Opt_TPL_Test::create_env(dakota_input));
-  Dakota::LibraryEnvironment& env = *p_env;
-
-  // Execute the environment
-  env.execute();
-
-  // Read in the tabular output file
-  const std::string tabular_data_name = "samples.dat";
-  Dakota::RealMatrix samples;
-  int NB_OF_SAMPLES = 10000;
-  Dakota::TabularIO::read_data_tabular(
-    tabular_data_name, "", samples, NB_OF_SAMPLES, 3, Dakota::TABULAR_NONE, true
-  );
-
-  // Compute mean values
-  double m1 = 0;
-  double m2 = 0;
-  for ( size_t j = 0; j < NB_OF_SAMPLES; j++ )
-  {
-    m1 += samples[0][j] / NB_OF_SAMPLES;
-    m2 += samples[1][j] / NB_OF_SAMPLES;
-  }
-
-  // Compute standard deviations
-  double s1 = 0;
-  double s2 = 0;
-  for ( size_t j = 0; j < NB_OF_SAMPLES; j++ )
-  {
-    s1 += (samples[0][j] - m1)*(samples[0][j] - m1);
-    s2 += (samples[1][j] - m2)*(samples[1][j] - m2);
-  }
-  s1 = std::sqrt(s1 / (NB_OF_SAMPLES - 1));
-  s2 = std::sqrt(s2 / (NB_OF_SAMPLES - 1));
-
-  // Check values
-  double TOL = 1e-3;
-  BOOST_CHECK_SMALL(std::abs(m1 - 0), TOL);
-  BOOST_CHECK_SMALL(std::abs(m2 - 1), TOL);
-  BOOST_CHECK_SMALL(std::abs(s1 - 1), TOL);
-  BOOST_CHECK_SMALL(std::abs(s2 - 0.5), TOL);
-}
-
-// +-------------------------------------------------------------------------+
-// |                   Check transformed uniform samples                     |
-// +-------------------------------------------------------------------------+
-BOOST_AUTO_TEST_CASE(check_transformed_uniform_samples)
-{
-  // Example dakota input specification
-  static const char dakota_input[] =
-    "environment \n"
-    "    tabular_data \n"
-    "    tabular_data_file = 'samples.dat' \n"
-    "    freeform \n"
-    "method \n"
-    "  output \n"
-    "    silent \n"
-    "  sampling \n"
-    "    sample_type low_discrepancy \n"
-    "    samples 4 \n"
-    "    rank_1_lattice no_randomize \n"
-    "variables \n"
-    "  uniform_uncertain = 2 \n"
-    "    lower_bounds = -1.0 0.0 \n"
-    "    upper_bounds =  1.0 2.0 \n"
-    "interface \n"
-    "    analysis_drivers = 'genz' \n"
-    "    analysis_components = 'cp1' \n"
-    "    direct \n"
-    "responses \n"
-    "  response_functions = 1 \n"
-    "  no_gradients \n"
-    "  no_hessians \n";
-
-  // Get problem description
-  std::shared_ptr<Dakota::LibraryEnvironment> p_env(Dakota::Opt_TPL_Test::create_env(dakota_input));
-  Dakota::LibraryEnvironment& env = *p_env;
-
-  // Execute the environment
-  env.execute();
-
-  // Read in the tabular output file
-  const std::string tabular_data_name = "samples.dat";
-  Dakota::RealMatrix samples;
-  Dakota::TabularIO::read_data_tabular(
-    tabular_data_name, "", samples, 4, 3, Dakota::TABULAR_NONE, true
-  );
-
-  // Exact values
-  double exact[4][2] =
-  {
-    {-1,   0, },
-    { 0,   1  },
-    {-0.5, 1.5},
-    { 0.5, 0.5}
-  };
-
-  // Check values of the lattice points
-  for ( size_t row = 0; row < 4; row++ )
-  {
-    for( size_t col = 0; col < 2; col++ )
-    {
-      BOOST_CHECK_CLOSE(samples[col][row], exact[row][col], 1e-4);
-    }
-  }
-}
-
-/// TODO
-// - Fix get_parameter_sets for all cases (copy form NonDSampling)
-// - Test for correlations -> must throw error
-// - Add Sobol points
-
-// // +-------------------------------------------------------------------------+
-// // |            Cannot sample from other distributions than uniform          |
-// // +-------------------------------------------------------------------------+
-// BOOST_AUTO_TEST_CASE(check_throws_normal_distribution)
-// {
-//   // Make sure an exception is thrown instead of an exit code
-//   Dakota::abort_mode = Dakota::ABORT_THROWS;
-
-//   // Example dakota input specification
-//   static const char dakota_input[] =
-//     "environment \n"
-//     "method \n"
-//     "  sampling \n"
-//     "    sample_type low_discrepancy \n"
-//     "variables \n"
-//     "  normal_uncertain = 2 \n"
-//     "    means = 0.0 0.0 \n"
-//     "    std_deviations = 1.0 1.0 \n"
-//     "interface \n"
-//     "    analysis_drivers = 'genz' \n"
-//     "    analysis_components = 'cp1' \n"
-//     "    direct \n"
-//     "responses \n"
-//     "  response_functions = 1 \n"
-//     "  no_gradients \n"
-//     "  no_hessians \n";
-
-//   // Get problem description
-//   std::shared_ptr<Dakota::LibraryEnvironment> p_env(Dakota::Opt_TPL_Test::create_env(dakota_input));
-//   Dakota::LibraryEnvironment& env = *p_env;
-
-//   // Check that normal random variables throws an exception
-//   Dakota::RealMatrix points(2, 1);
-//   BOOST_CHECK_THROW(
-//     env.execute(),
-//     std::system_error
-//   );
-// }
 
 } // end namespace TestRank1Lattice
 

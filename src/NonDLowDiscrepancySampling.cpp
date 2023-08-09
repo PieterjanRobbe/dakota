@@ -62,6 +62,10 @@ void NonDLowDiscrepancySampling::get_parameter_sets(
 }
                         
 /// Same as above, but allow verbose outputs
+/// NOTE: This method probably doesn't deal with 'active' random
+/// variables in a correct way...
+/// TODO: Check active variable use
+/// TODO: This method sort of assumes 'sample_matrix' has the appropriate shape
 void NonDLowDiscrepancySampling::get_parameter_sets(
   Model& model,
   const size_t num_samples,
@@ -69,43 +73,116 @@ void NonDLowDiscrepancySampling::get_parameter_sets(
   bool write_message
 )
 {
-  /// TODO: this is copied from NonDSampling for now
-  /// TODO: deal with active variables!!!
+  /// Check if low-discrepancy sampling supports the random variables 
+  /// associated with this model
+  check_support(model.multivariate_distribution());
+
+  /// Generate the points of this low-discrepancy sequence
+  sequence->get_points(colPtr, colPtr + num_samples, sample_matrix);
+
+  /// NOTE: this 'switch case' is copied from 'NonDSampling', this should be
+  /// refactored as soon as coupling between 'NonDSampling' and 'lhsDriver'
+  /// has been removed
   switch (samplingVarsMode) {
-    /// HINT
-    ///
-    /// use multivariatedistribution.correlationFlag ?
-    ///
+
+    /// NOTE: This mode gets called when 'method' is 'sampling' in the Dakota
+    /// input file
     case ACTIVE:
+    /// NOTE: Same remark as above regarding the 'backfillDuplicates' flag
+    /// The only difference with the 'ACTIVE' case is 'active_corr'
+    /// I think 'active_corr' is to switch on/off correlations between random
+    /// variables? Since we don't support correlated random variables,
+    /// I'm going to refactor this into one branch
+    /// NOTE: I don't think this properly deals with the 'active' random
+    /// variables...
+    case DESIGN:
+    case ALEATORY_UNCERTAIN:
+    case EPISTEMIC_UNCERTAIN:
+    case UNCERTAIN:
+    case STATE:
+    case ALL:
+    {
+      /// NOTE: For LHS sampling, this branch distinguishes between 
+      /// 'generate_samples' and 'generate_unique_samples' (with the
+      /// 'backfillDuplicates' flag)
+      /// I'm not entirely sure what the difference is, but the code
+      /// below seems to work for now...
+
+      /// Transform points from [0, 1) to the marginal distributions given in
+      /// the model
+      transform(model, sample_matrix);
+
+      break;
+    }
+
     case ACTIVE_UNIFORM:
     case ALL_UNIFORM:
     case UNCERTAIN_UNIFORM:
     case ALEATORY_UNCERTAIN_UNIFORM:
     case EPISTEMIC_UNCERTAIN_UNIFORM:
     {
-      /// Only uniform sampling has been implemented for now
-      // if ( samplingVarsMode == ACTIVE )
-      // {
-      //   Pecos::MultivariateDistribution& mv_dist
-      //     = model.multivariate_distribution();
-      //   std::vector<Pecos::RandomVariable>& variables
-      //     = mv_dist.random_variables();
-      //   for ( Pecos::RandomVariable variable : variables )
-      //   {
-      //     if ( variable.type() != Pecos::UNIFORM )
-      //     {
-      //       Cerr << "\nError: only uniform low-discrepancy sampling has been "
-      //         << "implemented." << std::endl;
-      //         abort_handler(METHOD_ERROR);
-      //     }
-      //   }
-      // }
+      /// Create a model view
+      short model_view = model.current_variables().view().first;
+      RealSymMatrix corr; // assume uncorrelated samples
 
-      /// Generate the points of this low-discrepancy sequence
-      sequence->get_points(colPtr, colPtr + num_samples, sample_matrix);
+      /// Sample uniformly from ACTIVE lower/upper bounds (regardless of model
+      /// view), from UNCERTAIN lower/upper bounds (with model in DISTINCT 
+      /// view), or from ALL lower/upper bounds (with model in ALL view)
+      if ( samplingVarsMode == ACTIVE_UNIFORM ||
+        ( samplingVarsMode == ALL_UNIFORM && 
+          ( model_view == RELAXED_ALL || model_view == MIXED_ALL ) ) ||
+        ( samplingVarsMode == UNCERTAIN_UNIFORM &&
+          ( model_view == RELAXED_UNCERTAIN ||
+            model_view == MIXED_UNCERTAIN ) ) ||
+        ( samplingVarsMode == ALEATORY_UNCERTAIN_UNIFORM &&
+          ( model_view == RELAXED_ALEATORY_UNCERTAIN ||
+            model_view == MIXED_ALEATORY_UNCERTAIN ) ) ||
+        ( samplingVarsMode == EPISTEMIC_UNCERTAIN_UNIFORM &&
+          ( model_view == RELAXED_EPISTEMIC_UNCERTAIN ||
+            model_view == MIXED_EPISTEMIC_UNCERTAIN ) ) )
+      {
+        /// Scale points from [0, 1) to the given lower and upper bounds
+        scale(
+          model.continuous_lower_bounds(), 
+          model.continuous_upper_bounds(), 
+          allSamples
+        );
+      }
+      /// Sample uniformly from ALL lower/upper bounds with model in distinct 
+      /// view
+      else if (samplingVarsMode == ALL_UNIFORM)
+      {
+        /// Scale points from [0, 1) to the given lower and upper bounds
+        scale(
+          model.all_continuous_lower_bounds(), 
+          model.all_continuous_upper_bounds(), 
+          allSamples
+        );
+      }
+      // Sample uniformly from {A,E,A+E} UNCERTAIN lower/upper bounds
+      // with model using a non-corresponding view (?)
+      else
+      {
+        size_t start_acv, num_acv, dummy;
+        mode_counts(model.current_variables(), start_acv, num_acv, dummy, 
+          dummy, dummy, dummy, dummy, dummy);
+        if (!num_acv)
+        {
+          Cerr << "Error: no active continuous variables for sampling in "
+            << "uniform mode" << std::endl;
+          abort_handler(METHOD_ERROR);
+        }
+        /// This is copied from 'NonDSampling'
+        const RealVector& all_c_l_bnds = model.all_continuous_lower_bounds();
+        const RealVector& all_c_u_bnds = model.all_continuous_upper_bounds();
+        RealVector uncertain_c_l_bnds(Teuchos::View,
+          const_cast<Real*>(&all_c_l_bnds[start_acv]), num_acv);
+        RealVector uncertain_c_u_bnds(Teuchos::View,
+          const_cast<Real*>(&all_c_u_bnds[start_acv]), num_acv);
 
-      /// Transform points from [0, 1) to the marginal model distributions
-      transform(model, sample_matrix);
+        /// Scale points from [0, 1) to the given lower and upper bounds
+        scale(uncertain_c_l_bnds, uncertain_c_u_bnds, allSamples);
+      }
 
       break;
     }
@@ -117,7 +194,7 @@ void NonDLowDiscrepancySampling::get_parameter_sets(
     }
   }
 
-  /// Update `colPtr` when using refinement samples
+  /// Update 'colPtr' when using refinement samples
   if ( allSamples.numCols() != sample_matrix.numCols() )
     colPtr += num_samples;
 }
@@ -138,6 +215,8 @@ void NonDLowDiscrepancySampling::get_parameter_sets(
 
 /// Generate a set of normally-distributed points by mapping the rank-1
 /// lattice points using the inverse normal cdf
+/// NOTE: can't handle correlated samples for now, so this method just
+/// throws an error
 void NonDLowDiscrepancySampling::get_parameter_sets(
   const RealVector& means,
   const RealVector& std_devs,
@@ -169,41 +248,20 @@ void NonDLowDiscrepancySampling::transform(
   const RealVector upper(Teuchos::View, plus_one, numParams);
   scale(lower, upper, sample_matrix); // transform from [0, 1) to [-1, 1)
 
-  /// NOTE: The code below should be a shortcut for the remainder of this 
-  /// function, but doesn't work at the moment (throws "Letter lacking 
-  /// redefinition of virtual probability_transform")
-  // /// Get std uniform model
-  // Model std_uniform_model;
-  // std_uniform_model.assign_rep(
-  //   std::make_shared<ProbabilityTransformModel>(model, STD_UNIFORM_U)
-  // );
-
-  // /// Transform samples
-  // transform_samples(std_uniform_model, model);
-
-  /// Get the distribution of interest from the provided model
-  const Pecos::MultivariateDistribution& x_dist = 
-    model.multivariate_distribution();
-
-  /// Placeholder for the target distribution
-  /// TODO: not sure about the "Pecos::MARGINALS_CORRELATIONS"?
-  Pecos::MultivariateDistribution u_dist(Pecos::MARGINALS_CORRELATIONS);
-
-  /// Initialize the probability transformation
-  ProbabilityTransformModel::initialize_distribution_types(
-    STD_UNIFORM_U, x_dist.active_variables(), x_dist, u_dist
+  /// Source model has uncorrelated standard uniform random variables
+  Model source_model;
+  source_model.assign_rep(
+    std::make_shared<ProbabilityTransformModel>(model, STD_UNIFORM_U)
   );
 
-  /// TODO: not sure what this does... 
-  u_dist.pull_distribution_parameters(x_dist);
-
-  /// Use nataf transformation (component-wise inverse CDF?)
-  /// TODO: need to check if this throws an error when samples are correlated
-  Pecos::ProbabilityTransformation nataf("nataf");
-  nataf.x_distribution(x_dist);
-  nataf.u_distribution(u_dist);
-
-  /// Transform the samples to [-1, 1]
+  /// Transform samples using Nataf transformation (component-wise inverse CDF)
+  /// NOTE: I believe this should be able to handle correlated random variables
+  /// as well, but that doesn't seem to work right now (the distributions 
+  /// appear distorted)
+  /// I've added a check in 'get_parameter_sets' to detect correlations, and to
+  /// throw an error accordingly
+  Pecos::ProbabilityTransformation& nataf = 
+    source_model.probability_transformation();
   transform_samples(nataf, sample_matrix, model.continuous_variable_ids(), 
     model.continuous_variable_ids(), false);
 }
@@ -229,6 +287,75 @@ void NonDLowDiscrepancySampling::scale(
       Real u = upper[row];
       Real l = lower[row];
       sample_matrix[col][row] = sample_matrix[col][row]*(u - l) + l;
+    }
+  }
+}
+
+/// Check if this multivariate distribution is supported by low-discrepancy
+/// sampling methods
+/// NOTE: A multivariate distribution is supported when it contains
+/// uncorrelated continuous random variables
+void NonDLowDiscrepancySampling::check_support(
+  Pecos::MultivariateDistribution& mv_dist
+)
+{
+  check_correlated(mv_dist);
+  check_has_discrete_random_variables(mv_dist);
+}
+
+/// Check for correlations and throw an error if variables are correlated
+/// NOTE: I think Nafta transformation (i.e., 'transform_samples' in 
+/// 'NonDSampling') can only deal with uncorrelated random variables?
+void NonDLowDiscrepancySampling::check_correlated(
+  Pecos::MultivariateDistribution& mv_dist
+)
+{
+  if ( mv_dist.correlation() )
+  {
+    Cerr << "\nError: low-discrepancy sampling does not support correlated "
+      << "random variables." << std::endl;
+    abort_handler(METHOD_ERROR);  
+  }
+}
+
+/// Check for discrete random variables and throw an error if any variable is
+/// discrete
+void NonDLowDiscrepancySampling::check_has_discrete_random_variables(
+  Pecos::MultivariateDistribution& mv_dist
+)
+{
+  std::vector<Pecos::RandomVariable>& variables = mv_dist.random_variables();
+  for ( Pecos::RandomVariable variable : variables )
+  {
+    auto variable_type = variable.type();
+    if ( 
+      not (
+        ( variable_type == Pecos::STD_NORMAL ) || 
+        ( variable_type == Pecos::NORMAL ) || 
+        ( variable_type == Pecos::BOUNDED_NORMAL ) || 
+        ( variable_type == Pecos::LOGNORMAL ) || 
+        ( variable_type == Pecos::BOUNDED_LOGNORMAL ) || 
+        ( variable_type == Pecos::STD_UNIFORM ) || 
+        ( variable_type == Pecos::UNIFORM ) || 
+        ( variable_type == Pecos::LOGUNIFORM ) || 
+        ( variable_type == Pecos::TRIANGULAR ) || 
+        ( variable_type == Pecos::STD_EXPONENTIAL ) || 
+        ( variable_type == Pecos::EXPONENTIAL ) || 
+        ( variable_type == Pecos::STD_BETA ) || 
+        ( variable_type == Pecos::BETA ) || 
+        ( variable_type == Pecos::STD_GAMMA ) || 
+        ( variable_type == Pecos::GAMMA ) || 
+        ( variable_type == Pecos::GUMBEL ) || 
+        ( variable_type == Pecos::FRECHET ) || 
+        ( variable_type == Pecos::WEIBULL ) || 
+        ( variable_type == Pecos::HISTOGRAM_BIN ) || 
+        ( variable_type == Pecos::INV_GAMMA )
+      )
+    )
+    {
+      Cerr << "\nError: low-discrepancy sampling does not support discrete "
+        << "random variables." << std::endl;
+        abort_handler(METHOD_ERROR);
     }
   }
 }
