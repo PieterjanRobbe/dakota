@@ -72,6 +72,10 @@ void NonDLowDiscrepancySampling::get_parameter_sets(
   /// TODO: this is copied from NonDSampling for now
   /// TODO: deal with active variables!!!
   switch (samplingVarsMode) {
+    /// HINT
+    ///
+    /// use multivariatedistribution.correlationFlag ?
+    ///
     case ACTIVE:
     case ACTIVE_UNIFORM:
     case ALL_UNIFORM:
@@ -100,7 +104,7 @@ void NonDLowDiscrepancySampling::get_parameter_sets(
       /// Generate the points of this low-discrepancy sequence
       sequence->get_points(colPtr, colPtr + num_samples, sample_matrix);
 
-      /// Scale points from [0, 1) to the marginal model distributions
+      /// Transform points from [0, 1) to the marginal model distributions
       transform(model, sample_matrix);
 
       break;
@@ -193,14 +197,15 @@ void NonDLowDiscrepancySampling::transform(
   /// TODO: not sure what this does... 
   u_dist.pull_distribution_parameters(x_dist);
 
-  /// Use nataf transformation (component-wise inverse CDF)
+  /// Use nataf transformation (component-wise inverse CDF?)
   /// TODO: need to check if this throws an error when samples are correlated
   Pecos::ProbabilityTransformation nataf("nataf");
   nataf.x_distribution(x_dist);
   nataf.u_distribution(u_dist);
 
   /// Transform the samples to [-1, 1]
-  transform_samples(nataf, sample_matrix, model.continuous_variable_ids(), model.continuous_variable_ids(), false);
+  transform_samples(nataf, sample_matrix, model.continuous_variable_ids(), 
+    model.continuous_variable_ids(), false);
 }
 
 /// Function to scale a given sample matrix from [0, 1) to the given lower and

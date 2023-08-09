@@ -66,8 +66,10 @@ BOOST_AUTO_TEST_CASE(check_points)
   };
 
   // Check values of the lattice points
-  for ( size_t row = 0; row < numPoints; row++  ) {
-    for( size_t col = 0; col < 2; col++) {
+  for ( size_t row = 0; row < numPoints; row++ )
+  {
+    for( size_t col = 0; col < 2; col++)
+    {
       BOOST_CHECK_CLOSE(points[row][col], exact[row][col], 1e-4);
     }
   }
@@ -129,6 +131,8 @@ BOOST_AUTO_TEST_CASE(check_throws_mMax_in_input_file)
   static const char dakota_input[] =
     "environment \n"
     "method \n"
+    "  output \n"
+    "    silent \n"
     "  sampling \n"
     "    sample_type low_discrepancy \n"
     "    rank_1_lattice \n"
@@ -238,6 +242,8 @@ BOOST_AUTO_TEST_CASE(check_valid_input_file)
     "    tabular_data_file = 'samples.dat' \n"
     "    freeform \n"
     "method \n"
+    "  output \n"
+    "    silent \n"
     "  sampling \n"
     "    sample_type low_discrepancy \n"
     "    samples 4 \n"
@@ -279,8 +285,10 @@ BOOST_AUTO_TEST_CASE(check_valid_input_file)
   };
 
   // Check values of the lattice points
-  for ( size_t row = 0; row < 4; row++  ) {
-    for( size_t col = 0; col < 3; col++) {
+  for ( size_t row = 0; row < 4; row++  )
+  {
+    for( size_t col = 0; col < 3; col++)
+    {
       BOOST_CHECK_CLOSE(samples[col][row], exact[row][col], 1e-4);
     }
   }
@@ -298,6 +306,8 @@ BOOST_AUTO_TEST_CASE(check_refinement_samples)
     "    tabular_data_file = 'samples.dat' \n"
     "    freeform \n"
     "method \n"
+    "  output \n"
+    "    silent \n"
     "  sampling \n"
     "    sample_type low_discrepancy \n"
     "    samples 2 \n"
@@ -344,8 +354,10 @@ BOOST_AUTO_TEST_CASE(check_refinement_samples)
   };
 
   // Check values of the lattice points
-  for ( size_t row = 0; row < 8; row++  ) {
-    for( size_t col = 0; col < 3; col++) {
+  for ( size_t row = 0; row < 8; row++  )
+  {
+    for( size_t col = 0; col < 3; col++)
+    {
       BOOST_CHECK_CLOSE(samples[col][row], exact[row][col], 1e-4);
     }
   }
@@ -360,6 +372,8 @@ BOOST_AUTO_TEST_CASE(check_inline_generating_vector)
   static const char dakota_input[] =
     "environment \n"
     "method \n"
+    "  output \n"
+    "    silent \n"
     "  sampling \n"
     "    sample_type low_discrepancy \n"
     "    samples 32 \n"
@@ -402,6 +416,8 @@ BOOST_AUTO_TEST_CASE(check_generating_vector_from_file)
   static const char dakota_input[] =
     "environment \n"
     "method \n"
+    "  output \n"
+    "    silent \n"
     "  sampling \n"
     "    sample_type low_discrepancy \n"
     "    samples 16 \n"
@@ -570,8 +586,8 @@ BOOST_AUTO_TEST_CASE(check_random_seed_lattice)
   lattice_rb.get_points(points_rb);
 
   // Check values of the lattice points
-  for ( size_t row = 0; row < numPoints; row++  ) {
-    for( size_t col = 0; col < 2; col++) {
+  for ( size_t row = 0; row < numPoints; row++ ) {
+    for( size_t col = 0; col < 2; col++ ) {
       // Lattice rules with same random seed should give the same points
       BOOST_CHECK_CLOSE(points_17a[row][col], points_17b[row][col], 1e-4);
       // "Random" seed should give different points
@@ -582,6 +598,78 @@ BOOST_AUTO_TEST_CASE(check_random_seed_lattice)
   }
 }
 
+// +-------------------------------------------------------------------------+
+// |                      Check normal random samples                        |
+// +-------------------------------------------------------------------------+
+BOOST_AUTO_TEST_CASE(check_normal_random_samples)
+{
+  // Example dakota input specification
+  static const char dakota_input[] =
+    "environment \n"
+    "    tabular_data \n"
+    "    tabular_data_file = 'samples.dat' \n"
+    "    freeform \n"
+    "method \n"
+    "  output \n"
+    "    silent \n"
+    "  sampling \n"
+    "    sample_type low_discrepancy \n"
+    "    samples 10000 \n"
+    "variables \n"
+    "  normal_uncertain = 2 \n"
+    "    means = 0.0 1.0 \n"
+    "    std_deviations = 1.0 0.5 \n"
+    "interface \n"
+    "    analysis_drivers = 'genz' \n"
+    "    analysis_components = 'cp1' \n"
+    "    direct \n"
+    "responses \n"
+    "  response_functions = 1 \n"
+    "  no_gradients \n"
+    "  no_hessians \n";
+
+  // Get problem description
+  std::shared_ptr<Dakota::LibraryEnvironment> p_env(Dakota::Opt_TPL_Test::create_env(dakota_input));
+  Dakota::LibraryEnvironment& env = *p_env;
+
+  // Execute the environment
+  env.execute();
+
+  // Read in the tabular output file
+  const std::string tabular_data_name = "samples.dat";
+  Dakota::RealMatrix samples;
+  int NB_OF_SAMPLES = 10000;
+  Dakota::TabularIO::read_data_tabular(
+    tabular_data_name, "", samples, NB_OF_SAMPLES, 3, Dakota::TABULAR_NONE, true
+  );
+
+  // Compute mean values
+  double m1 = 0;
+  double m2 = 0;
+  for ( size_t j = 0; j < NB_OF_SAMPLES; j++ )
+  {
+    m1 += samples[0][j] / NB_OF_SAMPLES;
+    m2 += samples[1][j] / NB_OF_SAMPLES;
+  }
+
+  // Compute standard deviations
+  double s1 = 0;
+  double s2 = 0;
+  for ( size_t j = 0; j < NB_OF_SAMPLES; j++ )
+  {
+    s1 += (samples[0][j] - m1)*(samples[0][j] - m1);
+    s2 += (samples[1][j] - m2)*(samples[1][j] - m2);
+  }
+  s1 = std::sqrt(s1 / (NB_OF_SAMPLES - 1));
+  s2 = std::sqrt(s2 / (NB_OF_SAMPLES - 1));
+
+  // Check values
+  double TOL = 1e-3;
+  BOOST_CHECK_SMALL(std::abs(m1 - 0), TOL);
+  BOOST_CHECK_SMALL(std::abs(m2 - 1), TOL);
+  BOOST_CHECK_SMALL(std::abs(s1 - 1), TOL);
+  BOOST_CHECK_SMALL(std::abs(s2 - 0.5), TOL);
+}
 
 // +-------------------------------------------------------------------------+
 // |                   Check transformed uniform samples                     |
@@ -595,6 +683,8 @@ BOOST_AUTO_TEST_CASE(check_transformed_uniform_samples)
     "    tabular_data_file = 'samples.dat' \n"
     "    freeform \n"
     "method \n"
+    "  output \n"
+    "    silent \n"
     "  sampling \n"
     "    sample_type low_discrepancy \n"
     "    samples 4 \n"
@@ -636,12 +726,19 @@ BOOST_AUTO_TEST_CASE(check_transformed_uniform_samples)
   };
 
   // Check values of the lattice points
-  for ( size_t row = 0; row < 4; row++  ) {
-    for( size_t col = 0; col < 2; col++) {
+  for ( size_t row = 0; row < 4; row++ )
+  {
+    for( size_t col = 0; col < 2; col++ )
+    {
       BOOST_CHECK_CLOSE(samples[col][row], exact[row][col], 1e-4);
     }
   }
 }
+
+/// TODO
+// - Fix get_parameter_sets for all cases (copy form NonDSampling)
+// - Test for correlations -> must throw error
+// - Add Sobol points
 
 // // +-------------------------------------------------------------------------+
 // // |            Cannot sample from other distributions than uniform          |
