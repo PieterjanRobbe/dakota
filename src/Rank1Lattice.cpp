@@ -30,14 +30,14 @@ Rank1Lattice::Rank1Lattice(
   int mMax,
   bool randomizeFlag,
   int seedValue,
-  Order order,
+  Rank1LatticeOrdering ordering,
   short outputLevel
 ) :
 LowDiscrepancySequence(seedValue, outputLevel),
 generatingVector(generatingVector),
 mMax(mMax),
 randomizeFlag(randomizeFlag),
-order(order)
+ordering(ordering)
 {
   /// Set `dMax`
   dMax = generatingVector.length();
@@ -107,7 +107,7 @@ order(order)
 
   /// Get the function pointer associated with the given ordering
   /// TODO: add gray code ordering?
-  switch ( order ) {
+  switch ( ordering ) {
     case NATURAL_ORDERING:
       phi = &Rank1Lattice::natural;
       if ( get_output_level() >= DEBUG_OUTPUT )
@@ -263,7 +263,6 @@ const UInt32Vector Rank1Lattice::get_generating_vector(
     /// Verify that `mMax` has not been provided
     if ( problem_db.get_int("method.m_max") )
     {
-      Cout << "!!!!!!!!!!!!!!!!!!!! Value of mMax is " << problem_db.get_int("method.m_max") << std::endl;
       Cerr << "\nError: you can't specify a default generating vector and "
         << "the log2 of the maximum number of points 'm_max' at the same "
         << "time." << std::endl;

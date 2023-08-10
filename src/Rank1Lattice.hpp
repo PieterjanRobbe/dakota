@@ -23,7 +23,10 @@
 namespace Dakota {
 
 /// Enum for rank-1 lattice rule ordering
-enum Order { NATURAL_ORDERING, RADICAL_INVERSE_ORDERING };
+enum Rank1LatticeOrdering {
+  NATURAL_ORDERING,
+  RADICAL_INVERSE_ORDERING
+};
 
 /// Class for rank-1 lattice rules in Dakota
 class Rank1Lattice : public LowDiscrepancySequence
@@ -40,7 +43,7 @@ public:
     int mMax,
     bool randomizeFlag,
     int seedValue,
-    Order order,
+    Rank1LatticeOrdering ordering,
     short outputLevel
   );
 
@@ -124,7 +127,7 @@ private:
   RealVector randomShift;
 
   /// Ordering of the points of this rank-1 lattice rule
-  Order order;
+  Rank1LatticeOrdering ordering;
 
   //
   //- Heading: Convenience functions
