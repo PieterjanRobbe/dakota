@@ -14,10 +14,13 @@
 //- Version:
 
 #include "dakota_data_types.hpp"
+#include "dakota_mersenne_twister.hpp"
 #include "dakota_tabular_io.hpp"
 #include "LowDiscrepancySequence.hpp"
 #include "Rank1Lattice.hpp"
 #include "ld_data.hpp"
+
+#include <boost/random/uniform_01.hpp>
 
 namespace Dakota {
 
@@ -76,14 +79,21 @@ order(order)
   if ( randomize )
   {
     /// Generate a uniformly distributed random shift vector
-    Real zeros[dMax] = { }; std::fill(zeros, zeros + dMax, 0);
-    Real ones[dMax] = { }; std::fill(ones, ones + dMax, 1);
-    const RealVector lower(Teuchos::View, zeros, dMax);
-    const RealVector upper(Teuchos::View, ones, dMax);
-    Pecos::LHSDriver lhsDriver("random");
-    RealSymMatrix corr; // Uncorrelated random variables
-    lhsDriver.seed(get_seed());
-    lhsDriver.generate_uniform_samples(lower, upper, corr, 1, randomShift);
+    /// NOTE: lhsDriver is really slow, switching to boost since
+    /// variables are uncorrelated
+    // Real zeros[dMax] = { }; std::fill(zeros, zeros + dMax, 0);
+    // Real ones[dMax] = { }; std::fill(ones, ones + dMax, 1);
+    // const RealVector lower(Teuchos::View, zeros, dMax);
+    // const RealVector upper(Teuchos::View, ones, dMax);
+    // Pecos::LHSDriver lhsDriver("random");
+    // RealSymMatrix corr; // Uncorrelated random variables
+    // lhsDriver.seed(get_seed());
+    // lhsDriver.generate_uniform_samples(lower, upper, corr, 1, randomShift);
+    boost::random::mt19937 rng(get_seed());
+    static boost::uniform_01<boost::mt19937> sampler(rng);
+    randomShift.resize(dMax);
+    for (size_t j=0; j < dMax; ++j)
+      randomShift[j] = sampler();
 
     /// Print random shift vector when debugging
     if ( get_output_level() >= DEBUG_OUTPUT )
