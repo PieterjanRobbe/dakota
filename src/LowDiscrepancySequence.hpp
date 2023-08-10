@@ -50,10 +50,25 @@ public:
 
   /// Getter and setter for dimension
   size_t get_dimension() { return dimension; }
-  void set_dimension(size_t dimension) { this->dimension = dimension; }
+
+  void set_dimension(
+    size_t dimension
+  )
+  {
+    /// Check if maximum dimension is exceeded
+    if (dimension > dMax)
+    {
+      Cerr << "\nError: this low-discrepancy sequence can only generate "
+        << "points in dimension " << dMax << " or less, got " 
+        << get_dimension() << "." << std::endl;
+      abort_handler(METHOD_ERROR);
+    }
+    this->dimension = dimension;
+  }
 
   // /// Getter and setter for seedValue
   size_t get_seed() { return seedValue; }
+
   void set_seed(int seedValue) { this->seedValue = seedValue; }
 
   /// Getter for output level
@@ -91,6 +106,23 @@ public:
       const size_t nMax, 
       RealMatrix& points
   ) = 0;
+
+  /// Randomize this low-discrepancy sequence
+  virtual void randomize() = 0;
+
+protected:
+
+  /// Maximum dimension of this low-discrepancy sequence
+  int dMax;
+
+  /// Move check_sizes, mMax, bitreverse, ... to this level
+  /// TODO: move some stuff to this level
+  /// Performs checks on the matrix `points`
+  // void check_sizes(
+  //   const size_t nMin,
+  //   const size_t nMax,
+  //   RealMatrix& points
+  // );
 
 private:
 

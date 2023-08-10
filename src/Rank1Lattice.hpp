@@ -71,17 +71,10 @@ public:
   /// Destructor
   ~Rank1Lattice();
 
-  /// Set dimension of this rank-1 lattice rule
-  /// Note: overriden from LowDiscrepancySequence to check if the new 
-  /// dimension is less than or equal to the maximum allowed dimension `dMax`
-  void set_dimension(
-    size_t dimension
-  );
-
   /// Get the overloaded function `get_points`
   using LowDiscrepancySequence::get_points;
 
-  /// Generate rank-1 lattice points from index `nMin` to index `nMax` 
+  /// Generates rank-1 lattice points
   void get_points(
     const size_t nMin,
     const size_t nMax,
@@ -112,9 +105,6 @@ private:
 
   /// Generating vector of this rank-1 lattice rule
   UInt32Vector generatingVector;
-
-  /// Maximum dimension of this rank-1 lattice rule
-  int dMax;
 
   /// 2^mMax is the maximum number of points of this rank-1 lattice rule
   /// Also: length of the generating vector

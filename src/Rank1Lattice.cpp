@@ -330,9 +330,11 @@ Rank1Lattice::~Rank1Lattice()
 
 }
 
-/// Generate rank-1 lattice points between `nMin` and `nMax` 
+/// Generates rank-1 lattice points 
+/// Returns the points with index `nMin`, `nMin` + 1, ..., `nMax` - 1
 /// This function will store the points in-place in the matrix `points`
 /// Each column of `points` contains a `dimension`-dimensional point
+/// where `dimension` is equal to the number of rows of `points`
 void Rank1Lattice::get_points(
   const size_t nMin,
   const size_t nMax, 
@@ -439,26 +441,6 @@ void Rank1Lattice::check_sizes(
       << numPoints << " points." << std::endl;
     abort_handler(METHOD_ERROR);
   }
-}
-
-/// Set dimension of this rank-1 lattice rule
-/// Note: overriden from LowDiscrepancySequence to check if the new 
-/// dimension is less than or equal to the maximum allowed dimension `dMax`
-void Rank1Lattice::set_dimension(
-  size_t dimension
-)
-{
-  /// Check if maximum dimension is exceeded
-  if (dimension > dMax)
-  {
-    Cerr << "\nError: this rank-1 lattice rule can only generate points in "
-      << " dimension " << dMax << " or less, got " << get_dimension() << ". "
-      << "Try specifying your own generating vector, or use the predefined "
-      << "generating vector 'kuo' that can generate points up to 3600 "
-      << "dimensions." << std::endl;
-    abort_handler(METHOD_ERROR);
-  }
-  LowDiscrepancySequence::set_dimension(dimension);
 }
 
 /// For use with the NATURAL ordering of the points
