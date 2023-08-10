@@ -38,7 +38,7 @@ public:
   Rank1Lattice(
     const UInt32Vector& generatingVector,
     int mMax,
-    bool randomize,
+    bool randomizeFlag,
     int seedValue,
     Order order,
     short outputLevel
@@ -85,6 +85,12 @@ public:
     RealMatrix& points
   );
 
+  /// Randomize this low-discrepancy sequence
+  void randomize();
+
+  /// Remove randomization of this low-discrepancy sequence
+  void no_randomize();
+
 protected:
 
   //
@@ -107,11 +113,12 @@ private:
   /// Maximum dimension of this rank-1 lattice rule
   int dMax;
 
-  /// 2^m_max is the maximum number of points of this rank-1 lattice rule
+  /// 2^mMax is the maximum number of points of this rank-1 lattice rule
+  /// Also: length of the generating vector
   int mMax;
 
   /// Randomize this rank-1 lattice rule if true
-  bool randomize;
+  bool randomizeFlag;
 
   /// Random shift associated with this rank-1 lattice rule
   RealVector randomShift;
@@ -134,6 +141,13 @@ private:
     ProblemDescDB& problem_db
   );
 
+  /// Performs checks on the matrix `points`
+  void check_sizes(
+    const size_t nMin,
+    const size_t nMax,
+    RealMatrix& points
+  );
+
   /// For use with the NATURAL ordering of the points
   Real natural(
     UInt32 k
@@ -147,13 +161,6 @@ private:
   /// Function pointer to the chosen ordering of the points
   Real (Rank1Lattice::*phi)(
     UInt32
-  );
-
-  /// Performs checks on the matrix `points`
-  void check_sizes(
-    const size_t nMin,
-    const size_t nMax,
-    RealMatrix& points
   );
 
 };

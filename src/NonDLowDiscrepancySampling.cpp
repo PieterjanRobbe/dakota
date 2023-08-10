@@ -20,23 +20,26 @@
 
 namespace Dakota {
 
-/// default constructor
+/// Default constructor
+/// NOTE: this class was templated on the low-discrepancy sequence type, but
+/// removed this to be (1) more in line with the other 'NonDSampling' classes
+/// and (2) more convenient in 'DakotaIterator' (the keyword parsing file)
 NonDLowDiscrepancySampling::NonDLowDiscrepancySampling(
   ProblemDescDB& problem_db,
   Model& model
 ) : 
 NonDLHSSampling(problem_db, model),
 sequence(
-  problem_db.get_bool("method.rank_1_lattice") ? 
-  new Rank1Lattice(problem_db) :
-  new Rank1Lattice(problem_db)
+  problem_db.get_bool("method.rank_1_lattice") ? new Rank1Lattice(problem_db) :
+    // new DigitalNet(problem_db)
+    new Rank1Lattice(problem_db)
 ), 
 colPtr(0)
 {
 
 }
 
-// default destructor
+// Default destructor
 NonDLowDiscrepancySampling::~NonDLowDiscrepancySampling( )
 {
 
@@ -62,10 +65,7 @@ void NonDLowDiscrepancySampling::get_parameter_sets(
 }
                         
 /// Same as above, but allow verbose outputs
-/// NOTE: This method probably doesn't deal with 'active' random
-/// variables in a correct way...
-/// TODO: Check active variable use
-/// TODO: This method sort of assumes 'sample_matrix' has the appropriate shape
+/// NOTE: Check if this method correctly handles active variables
 void NonDLowDiscrepancySampling::get_parameter_sets(
   Model& model,
   const size_t num_samples,
@@ -76,9 +76,6 @@ void NonDLowDiscrepancySampling::get_parameter_sets(
   /// Check if low-discrepancy sampling supports the random variables 
   /// associated with this model
   check_support(model.multivariate_distribution());
-
-  /// Generate the points of this low-discrepancy sequence
-  sequence->get_points(colPtr, colPtr + num_samples, sample_matrix);
 
   /// NOTE: this 'switch case' is copied from 'NonDSampling', this should be
   /// refactored as soon as coupling between 'NonDSampling' and 'lhsDriver'
@@ -93,8 +90,6 @@ void NonDLowDiscrepancySampling::get_parameter_sets(
     /// I think 'active_corr' is to switch on/off correlations between random
     /// variables? Since we don't support correlated random variables,
     /// I'm going to refactor this into one branch
-    /// NOTE: I don't think this properly deals with the 'active' random
-    /// variables...
     case DESIGN:
     case ALEATORY_UNCERTAIN:
     case EPISTEMIC_UNCERTAIN:
@@ -102,11 +97,16 @@ void NonDLowDiscrepancySampling::get_parameter_sets(
     case STATE:
     case ALL:
     {
-      /// NOTE: For LHS sampling, this branch distinguishes between 
-      /// 'generate_samples' and 'generate_unique_samples' (with the
-      /// 'backfillDuplicates' flag)
-      /// I'm not entirely sure what the difference is, but the code
-      /// below seems to work for now...
+      /// Randomize sequence if 'unique' samples are required
+      /// NOTE: I assume this then deals correctly with the 'get_samples' vs
+      /// 'get_unique_samples' in 'LHSDriver'?
+      if ( backfillDuplicates )
+      {
+        sequence->randomize();
+      }
+
+      /// Generate points from the low-discrepancy sequence
+      sequence->get_points(colPtr, colPtr + num_samples, sample_matrix);
 
       /// Transform points from [0, 1) to the marginal distributions given in
       /// the model
@@ -141,6 +141,9 @@ void NonDLowDiscrepancySampling::get_parameter_sets(
           ( model_view == RELAXED_EPISTEMIC_UNCERTAIN ||
             model_view == MIXED_EPISTEMIC_UNCERTAIN ) ) )
       {
+        /// Generate points from the low-discrepancy sequence
+        sequence->get_points(colPtr, colPtr + num_samples, sample_matrix);
+        
         /// Scale points from [0, 1) to the given lower and upper bounds
         scale(
           model.continuous_lower_bounds(), 
@@ -152,6 +155,9 @@ void NonDLowDiscrepancySampling::get_parameter_sets(
       /// view
       else if (samplingVarsMode == ALL_UNIFORM)
       {
+        /// Generate points from the low-discrepancy sequence
+        sequence->get_points(colPtr, colPtr + num_samples, sample_matrix);
+
         /// Scale points from [0, 1) to the given lower and upper bounds
         scale(
           model.all_continuous_lower_bounds(), 
@@ -180,6 +186,9 @@ void NonDLowDiscrepancySampling::get_parameter_sets(
         RealVector uncertain_c_u_bnds(Teuchos::View,
           const_cast<Real*>(&all_c_u_bnds[start_acv]), num_acv);
 
+        /// Generate points from the low-discrepancy sequence
+        sequence->get_points(colPtr, colPtr + num_samples, sample_matrix);
+
         /// Scale points from [0, 1) to the given lower and upper bounds
         scale(uncertain_c_l_bnds, uncertain_c_u_bnds, allSamples);
       }
@@ -206,7 +215,7 @@ void NonDLowDiscrepancySampling::get_parameter_sets(
   const RealVector& upper
 )
 {
-  /// Generate the points of this low-discrepancy sequence
+  /// Generate points from the low-discrepancy sequence
   sequence->get_points(allSamples.numCols(), allSamples);
 
   /// Scale points from [0, 1) to the model's lower and upper bounds
@@ -259,7 +268,7 @@ void NonDLowDiscrepancySampling::transform(
   /// as well, but that doesn't seem to work right now (the distributions 
   /// appear distorted)
   /// I've added a check in 'get_parameter_sets' to detect correlations, and to
-  /// throw an error accordingly
+  /// throw an error if correlated random variables are requested
   Pecos::ProbabilityTransformation& nataf = 
     source_model.probability_transformation();
   transform_samples(nataf, sample_matrix, model.continuous_variable_ids(), 
@@ -278,10 +287,10 @@ void NonDLowDiscrepancySampling::scale(
   auto numParams = sample_matrix.numRows(); // # params = # rows
   auto numSamples = sample_matrix.numCols(); // # samples = # columns
   /// Loop over each sample / column
-  for (size_t col=0; col < sample_matrix.numCols(); col++) 
+  for (size_t col=0; col < numSamples; col++) 
   {
     /// Loop over each row / parameter
-    for (size_t row=0; row < sample_matrix.numRows(); row++)
+    for (size_t row=0; row < numParams; row++)
     {
       /// Scale from [0, 1) to [lower, upper)
       Real u = upper[row];
@@ -291,8 +300,8 @@ void NonDLowDiscrepancySampling::scale(
   }
 }
 
-/// Check if this multivariate distribution is supported by low-discrepancy
-/// sampling methods
+/// Check if the given multivariate distribution is supported by 
+/// low-discrepancy sampling methods
 /// NOTE: A multivariate distribution is supported when it contains
 /// uncorrelated continuous random variables
 void NonDLowDiscrepancySampling::check_support(
@@ -304,7 +313,7 @@ void NonDLowDiscrepancySampling::check_support(
 }
 
 /// Check for correlations and throw an error if variables are correlated
-/// NOTE: I think Nafta transformation (i.e., 'transform_samples' in 
+/// NOTE: I think Nataf transformation (i.e., 'transform_samples' in 
 /// 'NonDSampling') can only deal with uncorrelated random variables?
 void NonDLowDiscrepancySampling::check_correlated(
   Pecos::MultivariateDistribution& mv_dist
@@ -324,6 +333,8 @@ void NonDLowDiscrepancySampling::check_has_discrete_random_variables(
   Pecos::MultivariateDistribution& mv_dist
 )
 {
+  /// Loop over each variable and check if its typy is allowed
+  /// TODO: is there a better way to do this, e.g., variable.is_discrete()?
   std::vector<Pecos::RandomVariable>& variables = mv_dist.random_variables();
   for ( Pecos::RandomVariable variable : variables )
   {
@@ -349,7 +360,8 @@ void NonDLowDiscrepancySampling::check_has_discrete_random_variables(
         ( variable_type == Pecos::FRECHET ) || 
         ( variable_type == Pecos::WEIBULL ) || 
         ( variable_type == Pecos::HISTOGRAM_BIN ) || 
-        ( variable_type == Pecos::INV_GAMMA )
+        ( variable_type == Pecos::INV_GAMMA ) ||
+        ( variable_type == Pecos::CONTINUOUS_RANGE )
       )
     )
     {

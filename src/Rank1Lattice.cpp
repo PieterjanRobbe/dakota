@@ -28,7 +28,7 @@ namespace Dakota {
 Rank1Lattice::Rank1Lattice(
   const UInt32Vector& generatingVector,
   int mMax,
-  bool randomize,
+  bool randomizeFlag,
   int seedValue,
   Order order,
   short outputLevel
@@ -36,7 +36,7 @@ Rank1Lattice::Rank1Lattice(
 LowDiscrepancySequence(seedValue, outputLevel),
 generatingVector(generatingVector),
 mMax(mMax),
-randomize(randomize),
+randomizeFlag(randomizeFlag),
 order(order)
 {
   /// Set `dMax`
@@ -76,24 +76,10 @@ order(order)
   /// Options for setting the randomization of this rank-1 lattice rule
   ///
 
-  if ( randomize )
+  if ( randomizeFlag )
   {
     /// Generate a uniformly distributed random shift vector
-    /// NOTE: lhsDriver is really slow, switching to boost since
-    /// variables are uncorrelated
-    // Real zeros[dMax] = { }; std::fill(zeros, zeros + dMax, 0);
-    // Real ones[dMax] = { }; std::fill(ones, ones + dMax, 1);
-    // const RealVector lower(Teuchos::View, zeros, dMax);
-    // const RealVector upper(Teuchos::View, ones, dMax);
-    // Pecos::LHSDriver lhsDriver("random");
-    // RealSymMatrix corr; // Uncorrelated random variables
-    // lhsDriver.seed(get_seed());
-    // lhsDriver.generate_uniform_samples(lower, upper, corr, 1, randomShift);
-    boost::random::mt19937 rng(get_seed());
-    boost::uniform_01<boost::mt19937> sampler(rng);
-    randomShift.resize(dMax);
-    for (size_t j=0; j < dMax; ++j)
-      randomShift[j] = sampler();
+    randomize();
 
     /// Print random shift vector when debugging
     if ( get_output_level() >= DEBUG_OUTPUT )
@@ -106,13 +92,13 @@ order(order)
   }
   else
   {
-    if ( get_output_level() >= VERBOSE_OUTPUT )
-      Cout << "WARNING: This lattice rule will not be randomized!"
-        << std::endl;
     // Zero random shift
-    randomShift.resize(dMax);
-    for (size_t j=0; j < dMax; ++j)
-      randomShift[j] = 0;
+    no_randomize();
+
+    /// Print warning about missing randomization (will include the 0 point)
+    if ( get_output_level() >= VERBOSE_OUTPUT )
+      Cout << "WARNING: This lattice rule will not be randomized, samples "
+        << "will include zeros as the first point!" << std::endl;
   }
 
   ///
@@ -384,6 +370,34 @@ void Rank1Lattice::get_points(
     }
   }
     
+}
+
+/// Randomize this low-discrepancy sequence
+void Rank1Lattice::randomize()
+{
+  /// NOTE: lhsDriver is really slow, switching to boost since
+  /// variables are uncorrelated
+  // Real zeros[dMax] = { }; std::fill(zeros, zeros + dMax, 0);
+  // Real ones[dMax] = { }; std::fill(ones, ones + dMax, 1);
+  // const RealVector lower(Teuchos::View, zeros, dMax);
+  // const RealVector upper(Teuchos::View, ones, dMax);
+  // Pecos::LHSDriver lhsDriver("random");
+  // RealSymMatrix corr; // Uncorrelated random variables
+  // lhsDriver.seed(get_seed());
+  // lhsDriver.generate_uniform_samples(lower, upper, corr, 1, randomShift);
+  boost::random::mt19937 rng(get_seed());
+  boost::uniform_01<boost::mt19937> sampler(rng);
+  randomShift.resize(dMax);
+  for (size_t j=0; j < dMax; ++j)
+    randomShift[j] = sampler();
+}
+
+/// Remove randomization of this low-discrepancy sequence
+void Rank1Lattice::no_randomize()
+{
+  randomShift.resize(dMax);
+  for (size_t j=0; j < dMax; ++j)
+    randomShift[j] = 0;
 }
 
 /// Perform checks on the matrix `points`

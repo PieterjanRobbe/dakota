@@ -46,13 +46,13 @@ public:
   //- Heading: Constructors and destructor
   //
 
-  /// default constructor
+  /// Default constructor
   NonDLowDiscrepancySampling(
     ProblemDescDB& problem_db,
     Model& model
   );
 
-  /// destructor
+  /// Destructor
   ~NonDLowDiscrepancySampling();
 
 protected:

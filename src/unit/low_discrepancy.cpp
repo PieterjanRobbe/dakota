@@ -294,6 +294,61 @@ BOOST_AUTO_TEST_CASE(check_transformed_uniform_samples)
 }
 
 // +-------------------------------------------------------------------------+
+// |                    Check active variables sampling                      |
+// +-------------------------------------------------------------------------+
+BOOST_AUTO_TEST_CASE(check_active_variables_sampling)
+{
+  // Example dakota input specification
+  char dakota_input[] =
+    "environment \n"
+    "    tabular_data \n"
+    "    tabular_data_file = 'samples.dat' \n"
+    "    freeform \n"
+    "method \n"
+    "  sampling \n"
+    "    sample_type low_discrepancy \n"
+    "    samples 5 \n"
+    "variables \n"
+    "  normal_uncertain = 2 \n"
+    "    means = 0.0 0.0 \n"
+    "    std_deviations = 1.0 1.0 \n"
+    "  continuous_design = 2 \n "
+    "    initial_point  0.6  0.7 \n "
+    "    upper_bounds   5.8  2.9 \n "
+    "    lower_bounds   0.5  -2.9 \n "
+    "  active uncertain \n "
+    "interface \n"
+    "    analysis_drivers = 'genz' \n"
+    "    analysis_components = 'cp1' \n"
+    "    direct \n"
+    "responses \n"
+    "  response_functions = 1 \n"
+    "  no_gradients \n"
+    "  no_hessians \n";
+
+  // Get problem description
+  std::shared_ptr<Dakota::LibraryEnvironment> p_env(Dakota::Opt_TPL_Test::create_env(dakota_input));
+  Dakota::LibraryEnvironment& env = *p_env;
+
+  // Execute the environment
+  env.execute();
+
+  // Read in the tabular output file
+  const std::string tabular_data_name = "samples.dat";
+  Dakota::RealMatrix samples;
+  Dakota::TabularIO::read_data_tabular(
+    tabular_data_name, "", samples, 5, 5, Dakota::TABULAR_NONE, true
+  );
+
+  // Check values of the lattice points
+  for ( size_t row = 0; row < 5; row++ )
+  {
+    BOOST_CHECK_CLOSE(samples[0][row], 0.6, 1e-8);
+    BOOST_CHECK_CLOSE(samples[1][row], 0.7, 1e-8);
+  }
+}
+
+// +-------------------------------------------------------------------------+
 // |                 Cannot sample correlated distributions                  |
 // +-------------------------------------------------------------------------+
 BOOST_AUTO_TEST_CASE(check_correlated_distributions)
@@ -338,7 +393,7 @@ BOOST_AUTO_TEST_CASE(check_correlated_distributions)
 }
 
 // +-------------------------------------------------------------------------+
-// |                 Cannot sample discrete distributions                  |
+// |                  Cannot sample discrete distributions                   |
 // +-------------------------------------------------------------------------+
 BOOST_AUTO_TEST_CASE(check_discrete_distributions)
 {
