@@ -862,8 +862,10 @@ BOOST_AUTO_TEST_CASE(check_random_seed_lattice)
   lattice_rb.get_points(points_rb);
 
   // Check values of the lattice points
-  for ( size_t row = 0; row < numPoints; row++ ) {
-    for( size_t col = 0; col < 2; col++ ) {
+  for ( size_t row = 0; row < numPoints; row++ )
+  {
+    for( size_t col = 0; col < 2; col++ )
+    {
       // Lattice rules with same random seed should give the same points
       BOOST_CHECK_CLOSE(points_17a[row][col], points_17b[row][col], 1e-4);
       // "Random" seed should give different points
@@ -872,6 +874,70 @@ BOOST_AUTO_TEST_CASE(check_random_seed_lattice)
       BOOST_CHECK_NE(points_ra[row][col], points_rb[row][col]);
     }
   }
+}
+
+// +-------------------------------------------------------------------------+
+// |                            Test randomization                           |
+// +-------------------------------------------------------------------------+
+BOOST_AUTO_TEST_CASE(check_randomization)
+{
+  // Get rank-1 lattice rule
+  Dakota::Rank1Lattice lattice;
+
+  // Generate points from this lattice rule
+  size_t dimension = 10;
+  size_t numPoints = 8;
+  Dakota::RealMatrix points(dimension, numPoints);
+  lattice.get_points(points);
+
+  // Randomize the lattice
+  lattice.randomize();
+
+  // Generate another set of points from this lattice rule
+  Dakota::RealMatrix different_points(dimension, numPoints);
+  lattice.get_points(different_points);
+
+  // Check if the lattice points are different
+  for ( size_t row = 0; row < numPoints; row++ )
+  {
+    for( size_t col = 0; col < dimension; col++ )
+    {
+      BOOST_CHECK_NE(points[row][col], different_points[row][col]);
+    }
+  }
+}
+
+// +-------------------------------------------------------------------------+
+// |                       Test disable randomization                        |
+// +-------------------------------------------------------------------------+
+BOOST_AUTO_TEST_CASE(check_disabled_randomization)
+{
+  // Get rank-1 lattice rule
+  Dakota::Rank1Lattice lattice;
+  lattice.no_randomize();
+
+  // Generate points from this lattice rule
+  size_t dimension = 2;
+  size_t numPoints = 3;
+  Dakota::RealMatrix points(dimension, numPoints);
+  lattice.get_points(points);
+
+  // Exact lattice points
+  double exact[numPoints][2] = {
+    {0, 0},
+    {0.5, 0.5},
+    {0.25, 0.75}
+  };
+
+  // Check values of the lattice points
+  for ( size_t row = 0; row < numPoints; row++ )
+  {
+    for( size_t col = 0; col < dimension; col++)
+    {
+      BOOST_CHECK_CLOSE(points[row][col], exact[row][col], 1e-4);
+    }
+  }
+  
 }
 
 } // end namespace TestRank1Lattice

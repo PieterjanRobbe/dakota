@@ -79,7 +79,7 @@ order(order)
   if ( randomizeFlag )
   {
     /// Generate a uniformly distributed random shift vector
-    randomize();
+    randomize(get_seed());
 
     /// Print random shift vector when debugging
     if ( get_output_level() >= DEBUG_OUTPUT )
@@ -263,6 +263,7 @@ const UInt32Vector Rank1Lattice::get_generating_vector(
     /// Verify that `mMax` has not been provided
     if ( problem_db.get_int("method.m_max") )
     {
+      Cout << "!!!!!!!!!!!!!!!!!!!! Value of mMax is " << problem_db.get_int("method.m_max") << std::endl;
       Cerr << "\nError: you can't specify a default generating vector and "
         << "the log2 of the maximum number of points 'm_max' at the same "
         << "time." << std::endl;
@@ -375,6 +376,23 @@ void Rank1Lattice::get_points(
 /// Randomize this low-discrepancy sequence
 void Rank1Lattice::randomize()
 {
+  randomize(std::time(0));
+}
+
+/// Remove randomization of this low-discrepancy sequence
+void Rank1Lattice::no_randomize()
+{
+  randomize(-1);
+}
+
+/// Randomize this low-discrepancy sequence
+/// Uses the given seed to initialize the RNG
+/// When the seed is < 0, the random shift will be set to 0 (effectively
+/// removing the randomization)
+void Rank1Lattice::randomize(
+  int seed
+)
+{
   /// NOTE: lhsDriver is really slow, switching to boost since
   /// variables are uncorrelated
   // Real zeros[dMax] = { }; std::fill(zeros, zeros + dMax, 0);
@@ -385,19 +403,11 @@ void Rank1Lattice::randomize()
   // RealSymMatrix corr; // Uncorrelated random variables
   // lhsDriver.seed(get_seed());
   // lhsDriver.generate_uniform_samples(lower, upper, corr, 1, randomShift);
-  boost::random::mt19937 rng(get_seed());
+  boost::random::mt19937 rng(std::max(0, seed));
   boost::uniform_01<boost::mt19937> sampler(rng);
   randomShift.resize(dMax);
   for (size_t j=0; j < dMax; ++j)
-    randomShift[j] = sampler();
-}
-
-/// Remove randomization of this low-discrepancy sequence
-void Rank1Lattice::no_randomize()
-{
-  randomShift.resize(dMax);
-  for (size_t j=0; j < dMax; ++j)
-    randomShift[j] = 0;
+    randomShift[j] = seed < 0 ? 0 : sampler();
 }
 
 /// Perform checks on the matrix `points`

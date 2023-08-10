@@ -141,6 +141,14 @@ private:
     ProblemDescDB& problem_db
   );
 
+  /// Randomize this low-discrepancy sequence
+  /// Uses the given seed to initialize the RNG
+  /// When the seed is < 0, the random shift will be set to 0 (effectively
+  /// removing the randomization)
+  void randomize(
+    int seed
+  );
+
   /// Performs checks on the matrix `points`
   void check_sizes(
     const size_t nMin,
