@@ -90,7 +90,7 @@ order(order)
     // lhsDriver.seed(get_seed());
     // lhsDriver.generate_uniform_samples(lower, upper, corr, 1, randomShift);
     boost::random::mt19937 rng(get_seed());
-    static boost::uniform_01<boost::mt19937> sampler(rng);
+    boost::uniform_01<boost::mt19937> sampler(rng);
     randomShift.resize(dMax);
     for (size_t j=0; j < dMax; ++j)
       randomShift[j] = sampler();
