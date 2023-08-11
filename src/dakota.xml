@@ -1810,6 +1810,13 @@
 	     </oneOf>
 	     ' >
 
+    <!-- Extracted option for natural ordering of low-discrepancy points,
+    as it occurs in both rank-1 lattice and digital net -->
+    <!ENTITY natural '
+      <keyword id="natural" name="natural" code="{N_mdm(true,naturalOrdering)}" label="Natural ordering" >
+      </keyword>
+    ' >
+
     ]>
 
 <document xmlns='http://www.sandia.gov/dakota/1.0' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
@@ -3006,9 +3013,56 @@
         </keyword>
         <keyword id="ordering" name="ordering" code="{0}" label="Ordering" minOccurs="0" default="Radical inverse ordering">
           <oneOf label="Ordering">
-            <keyword id="natural" name="natural" code="{N_mdm(true,naturalOrdering)}" label="Natural ordering" >
-            </keyword>
+            &natural;
             <keyword id="radical_inverse" name="radical_inverse" code="{N_mdm(true,radicalInverseOrdering)}" label="Radical inverse ordering" >
+            </keyword>
+          </oneOf>
+        </keyword>
+      </keyword>
+    </optional>
+    <optional>
+      <keyword id="digital_net" name="digital_net" code="{N_mdm(true,digitalNetFlag)}" label="Options for digital net samples" default="No digital net sampling">
+        <alias name="sobol_sequence"/>
+        <keyword id="no_digital_shift" name="no_digital_shift" code="{N_mdm(true,noDigitalShiftFlag)}" label="no_digital_shift" minOccurs="0">
+        </keyword>
+        <keyword id="no_scrambling" name="no_scrambling" code="{N_mdm(true,noScramblingFlag)}" label="no_scrambling" minOccurs="0">
+        </keyword>
+        <keyword id="integer_format" name="integer_format" code="{0}" label="Integer format" minOccurs="0" default="Most significant bit first">
+          <oneOf label="Integer Format">
+            <keyword id="most_significant_bit_first" name="most_significant_bit_first" code="{N_mdm(true,mostSignificantBitFirst)}" label="most_significant_bit_first" >
+            </keyword>
+            <keyword id="least_significant_bit_first" name="least_significant_bit_first" code="{N_mdm(true,leastSignificantBitFirst)}" label="least_significant_bit_first" >
+            </keyword>
+          </oneOf>
+        </keyword>
+        <keyword id="m_max" name="m_max" code="{N_mdm(int,log2MaxPoints)}" label="m_max" minOccurs="0" default="0">
+          <param type="INTEGER" constraint=">= 0" />
+        </keyword>
+        <keyword id="t_max" name="t_max" code="{N_mdm(int,numberOfBits)}" label="t_max" minOccurs="0" default="0">
+          <param type="INTEGER" constraint=">= 0" />
+        </keyword>
+        <keyword id="generating_matrices" name="generating_matrices" code="{0}" label="Generating matrices" minOccurs="0" default="No generating matrices">
+          <oneOf label="Generating Matrices"> 
+            <keyword id="inline" name="inline" code="{N_mdm(ivec,generatingMatrices)}" label="Inline generating matrices" >
+              <param type="INTEGERLIST" />
+            </keyword>
+            <keyword id="file" name="file" code="{N_mdm(str,generatingMatricesFileName)}" label="Generating matrices file" >
+              <param type="STRING" />
+            </keyword>
+            <keyword id="predefined" name="predefined" code="{0}" label="Predefined generating matrices" default="Default generating matrices">
+              <oneOf label="Predefined Generating Matrices">
+                <keyword id="joe_kuo" name="joe_kuo" code="{N_mdm(true,joe_kuo)}" label="Generating matrices from Joe and Kuo (2008)">
+                </keyword>
+                <keyword id="sobol" name="sobol" code="{N_mdm(true,sobol)}" label="Generating matrices for Sobol sequence">
+                </keyword>
+              </oneOf>
+            </keyword>
+          </oneOf>
+        </keyword>
+        <keyword id="ordering" name="ordering" code="{0}" label="Ordering" minOccurs="0" default="Gray code ordering">
+          <oneOf label="Ordering">
+            &natural;
+            <keyword id="gray_code" name="gray_code" code="{N_mdm(true,grayCodeOrdering)}" label="Gray code ordering" >
             </keyword>
           </oneOf>
         </keyword>

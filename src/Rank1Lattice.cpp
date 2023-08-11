@@ -43,31 +43,6 @@ generatingVector(generatingVector),
 randomShiftFlag(randomShiftFlag),
 ordering(ordering)
 {
-  /// Check that `mMax` is larger than 0
-  if ( mMax < 1 )
-  {
-    Cerr << "\nError: the log2 of the maximum number of points 'mMax' must "
-      << "be positive. Did you supply a custom generating vector but forgot "
-      << "to specify the keyword 'm_max'?" << std::endl;
-    abort_handler(METHOD_ERROR);
-  }
-  
-  /// Check that `dMax` is larger than 0
-  if ( dMax == 0 )
-  {
-    Cerr << "\nError: must have at least one element in the generating "
-      <<  "vector, found 0." << std::endl;
-    abort_handler(METHOD_ERROR);
-  }
-
-  /// Check that `seedValue` is positive
-  if ( seedValue < 0 )
-  {
-    Cerr << "\nError: expected random seed value to be 0 or more, "
-      <<  "got " << seedValue << std::endl;
-    abort_handler(METHOD_ERROR);
-  }
-
   /// Print summary info when debugging
   if ( outputLevel >= DEBUG_OUTPUT )
   {
@@ -75,6 +50,7 @@ ordering(ordering)
       << dMax << std::endl;
     Cout << "The log2 of the maximum number of points of this rank-1 "
       << "lattice rule is " << mMax << std::endl;
+    Cout << "The value of the random seed is " << seedValue << std::endl;
     Cout << "Found generating vector ";
     for (size_t j=0; j < generatingVector.length(); ++j)
       Cout << generatingVector[j] << " ";
@@ -112,7 +88,6 @@ ordering(ordering)
   ///
 
   /// Get the function pointer associated with the given ordering
-  /// TODO: add gray code ordering?
   switch ( ordering ) {
     case RANK_1_LATTICE_NATURAL_ORDERING:
       phi = &Rank1Lattice::natural;
@@ -198,6 +173,31 @@ Rank1Lattice(
 )
 {
 
+}
+
+/// Perform checks on dMax
+/// Checks if dMax is positive (> 0)
+void Rank1Lattice::check_dMax()
+{
+  if ( dMax == 0 )
+  {
+    Cerr << "\nError: must have at least one element in the generating "
+      <<  "vector, found 0." << std::endl;
+    abort_handler(METHOD_ERROR);
+  }
+}
+
+/// Perform checks on mMax
+/// Checks if mMax is positive (> 0)
+void Rank1Lattice::check_mMax()
+{
+  if ( mMax < 1 )
+  {
+    Cerr << "\nError: the log2 of the maximum number of points 'mMax' must "
+      << "be positive. Did you supply a custom generating vector but forgot "
+      << "to specify the keyword 'm_max'?" << std::endl;
+    abort_handler(METHOD_ERROR);
+  }
 }
 
 /// Extract the generating vector from the given problem description database

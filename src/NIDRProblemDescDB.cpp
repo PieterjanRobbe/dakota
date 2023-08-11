@@ -6614,6 +6614,9 @@ static IntVector
 	MP_(stepsPerVariable),
   MP_(generatingVector);
 
+static IntMatrix
+  MP_(generatingMatrices);
+
 static Method_mp_ilit2
 	MP3(replacementType,numberRetained,chc),
 	MP3(replacementType,numberRetained,elitist),
@@ -6880,7 +6883,8 @@ static String
 	MP_(subMethodName),
         MP_(subMethodPointer),
         MP_(subModelPointer),
-	MP_(generatingVectorFileName);
+	MP_(generatingVectorFileName),
+  MP_(generatingMatricesFileName);
 
 static StringArray
 	MP_(hybridMethodNames),
@@ -6951,7 +6955,15 @@ static bool
   MP_(kuo),
   MP_(cools_kuo_nuyens),
   MP_(naturalOrdering),
-  MP_(radicalInverseOrdering);
+  MP_(radicalInverseOrdering),
+  MP_(digitalNetFlag),
+  MP_(noDigitalShiftFlag),
+  MP_(noScramblingFlag),
+  MP_(mostSignificantBitFirst),
+  MP_(leastSignificantBitFirst),
+  MP_(joe_kuo),
+  MP_(sobol),
+  MP_(grayCodeOrdering);
 
 static short
 	MP_(polynomialOrder);
@@ -7000,7 +7012,8 @@ static int
 	MP_(subSamplingPeriod),
 	MP_(totalPatternSize),
 	MP_(verifyLevel),
-  MP_(log2MaxPoints);
+  MP_(log2MaxPoints),
+  MP_(numberOfBits);
 
 static size_t
 	MP_(collocationPoints),

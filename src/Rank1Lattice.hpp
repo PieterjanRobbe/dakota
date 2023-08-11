@@ -89,6 +89,14 @@ private:
   /// Order of the points of this rank-1 lattice rule
   Rank1LatticeOrdering ordering;
 
+  /// Perform checks on dMax
+  /// Checks if dMax is positive (> 0)
+  void check_dMax();
+
+  /// Perform checks on mMax
+  /// Checks if mMax is positive (> 0)
+  void check_mMax();
+
   /// Extract the generating vector from the given problem description database
   const UInt32Vector get_generating_vector(
     ProblemDescDB& problem_db

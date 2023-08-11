@@ -136,7 +136,6 @@
 #include "EvaluationStore.hpp"
 #include "NonDWASABIBayesCalibration.hpp"
 #include "NonDLowDiscrepancySampling.hpp"
-#include "Rank1Lattice.hpp"
 
 #include <boost/bimap.hpp>
 #include <boost/assign.hpp>

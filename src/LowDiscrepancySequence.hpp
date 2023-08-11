@@ -47,8 +47,11 @@ public:
   seedValue(seedValue),
   outputLevel(outputLevel)
   {
-    /// NOTE: error checking of the inputs is delegated to the constructor of
-    /// the derived class in order to provide more meaningful error messages
+    /// Check inputs in separate functions so that they can be overriden in
+    /// a derived class to print more useful error messages
+    check_dMax();
+    check_mMax();
+    check_seedValue();
   }
 
   /// Destructor
@@ -137,6 +140,48 @@ protected:
   /// The output verbosity level, can be one of
   /// {SILENT, QUIET, NORMAL, VERBOSE, DEBUG}_OUTPUT
   short outputLevel;
+
+  /// Perform checks on dMax
+  /// Checks if dMax is positive (> 0)
+  /// NOTE: this method can be overridden in the derived class in order to 
+  /// provide more meaningful error messages
+  void check_dMax()
+  {
+    if ( dMax < 1 )
+    {
+      Cerr << "\nError: maximum dimension 'dMax' must be positive (> 0), " 
+        << "got " << dMax << "." << std::endl;
+      abort_handler(METHOD_ERROR);
+    }
+  }
+
+  /// Perform checks on mMax
+  /// Checks if mMax is positive (> 0)
+  /// NOTE: this method can be overridden in the derived class in order to 
+  /// provide more meaningful error messages
+  void check_mMax()
+  {
+    if ( mMax < 1 )
+    {
+      Cerr << "\nError: log2 of the maximum number of points 'mMax' must be "
+        << "positive (> 0), got " << mMax << "." << std::endl;
+      abort_handler(METHOD_ERROR);
+    }
+  }
+
+  /// Perform checks on seedValue
+  /// Checks if seedValue is positive or zero (>= 0)
+  /// NOTE: this method can be overridden in the derived class in order to 
+  /// provide more meaningful error messages
+  void check_seedValue()
+  {
+    if ( seedValue < 0 )
+    {
+      Cerr << "\nError: value for random seed 'seedValue' must be 0 or more, "
+        <<  "got " << seedValue << "." << std::endl;
+      abort_handler(METHOD_ERROR);
+    }
+  }
 
   /// Perform checks on the matrix `points`
   /// Each column of `points` contains a `dimension`-dimensional point

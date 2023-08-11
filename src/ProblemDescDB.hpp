@@ -202,6 +202,8 @@ public:
   const RealVector& get_rv(const String& entry_name) const;
   /// get an IntVector out of the database based on an identifier string
   const IntVector& get_iv(const String& entry_name) const;
+  /// get an IntMatrix out of the database based on an identifier string
+  const IntMatrix& get_im(const String& entry_name) const;
   /// get a BitArray out of the database based on an identifier string
   const BitArray& get_ba(const String& entry_name) const;
   /// get an SizetArray out of the database based on an identifier string
@@ -283,6 +285,8 @@ public:
   void set(const String& entry_name, const RealVector& rv);
   /// set an IntVector within the database based on an identifier string
   void set(const String& entry_name, const IntVector& iv);
+  /// set an IntMatrix within the database based on an identifier string
+  void set(const String& entry_name, const IntMatrix& im);
   /// set a BitArray within the database based on an identifier string
   void set(const String& entry_name, const BitArray& ba);
   /// set a RealMatrix within the database based on an identifier string

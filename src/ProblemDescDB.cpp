@@ -1610,6 +1610,22 @@ const IntVector& ProblemDescDB::get_iv(const String& entry_name) const
 }
 
 
+const IntMatrix& ProblemDescDB::get_im(const String& entry_name) const
+{
+  return get<const IntMatrix>
+  ( "get_im()",
+    { /* environment */ },
+    { /* method */
+      {"generating_matrices.inline", P_MET generatingMatrices}
+    },
+    { /* model */ },
+    { /* variables */ },
+    { /* interface */ },
+    { /* responses */ },
+    entry_name, dbRep);
+}
+
+
 const BitArray& ProblemDescDB::get_ba(const String& entry_name) const
 {
   return get<const BitArray>
@@ -2096,7 +2112,8 @@ const String& ProblemDescDB::get_string(const String& entry_name) const
       {"sub_method_pointer", P_MET subMethodPointer},
       {"sub_model_pointer", P_MET subModelPointer},
       {"trial_type", P_MET trialType},
-      {"generating_vector.file", P_MET generatingVectorFileName}
+      {"generating_vector.file", P_MET generatingVectorFileName},
+      {"generating_matrices.file", P_MET generatingMatricesFileName}
     },
     { /* model */
       {"advanced_options_file", P_MOD advancedOptionsFilename},
@@ -2296,7 +2313,8 @@ int ProblemDescDB::get_int(const String& entry_name) const
       {"samples", P_MET numSamples},
       {"sub_sampling_period", P_MET subSamplingPeriod},
       {"symbols", P_MET numSymbols},
-      {"m_max", P_MET log2MaxPoints}
+      {"m_max", P_MET log2MaxPoints},
+      {"t_max", P_MET numberOfBits},
     },
     { /* model */
       {"active_subspace.bootstrap_samples", P_MOD numReplicates},
@@ -2700,7 +2718,15 @@ bool ProblemDescDB::get_bool(const String& entry_name) const
       {"kuo", P_MET kuo},
       {"cools_kuo_nuyens", P_MET cools_kuo_nuyens},
       {"ordering.natural", P_MET naturalOrdering},
-      {"ordering.radical_inverse", P_MET radicalInverseOrdering}
+      {"ordering.radical_inverse", P_MET radicalInverseOrdering},
+      {"digital_net", P_MET digitalNetFlag},
+      {"no_digital_shift", P_MET noDigitalShiftFlag},
+      {"no_scrambling", P_MET noScramblingFlag},
+      {"most_significant_bit_first", P_MET mostSignificantBitFirst},
+      {"least_significant_bit_first", P_MET leastSignificantBitFirst},
+      {"joe_kuo", P_MET joe_kuo},
+      {"sobol", P_MET sobol},
+      {"gray_code_ordering", P_MET grayCodeOrdering}
     },
     { /* model */
       {"active_subspace.build_surrogate", P_MOD subspaceBuildSurrogate},
@@ -2925,6 +2951,24 @@ void ProblemDescDB::set(const String& entry_name, const IntVector& iv)
     entry_name, dbRep);
 
   rep_iv = iv;
+}
+
+
+void ProblemDescDB::set(const String& entry_name, const IntMatrix& im)
+{
+  IntMatrix& rep_im = get<IntMatrix>
+  ( "set(IntMatrix&)",
+    { /* environment */ },
+    { /* method */
+      {"generating_matrices.inline", P_MET generatingMatrices}
+    },
+    { /* model */ },
+    { /* variables */ },
+    { /* interface */ },
+    { /* responses */ },
+    entry_name, dbRep);
+
+  rep_im = im;
 }
 
 

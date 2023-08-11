@@ -2725,6 +2725,35 @@ KEYWORD method {N_mdm3(start,0,stop)}
          ]
        )
      ]
+    [ 
+      ( digital_net ALIAS sobol_sequence {N_mdm(true,digitalNetFlag)}
+        [ no_digital_shift {N_mdm(true,noDigitalShiftFlag)} ]
+        [ no_scrambling {N_mdm(true,noScramblingFlag)} ]
+        [ integer_format {0}
+          most_significant_bit_first {N_mdm(true,mostSignificantBitFirst)}
+          |
+          least_significant_bit_first {N_mdm(true,leastSignificantBitFirst)}
+         ]
+        [ m_max INTEGER >= 0 {N_mdm(int,log2MaxPoints)} ]
+        [ t_max INTEGER >= 0 {N_mdm(int,numberOfBits)} ]
+        [ generating_matrices {0}
+          inline INTEGERLIST {N_mdm(ivec,generatingMatrices)}
+          |
+          file STRING {N_mdm(str,generatingMatricesFileName)}
+          |
+          ( predefined {0}
+            joe_kuo {N_mdm(true,joe_kuo)}
+            |
+            sobol {N_mdm(true,sobol)}
+           )
+         ]
+        [ ordering {0}
+          natural {N_mdm(true,naturalOrdering)}
+          |
+          gray_code {N_mdm(true,grayCodeOrdering)}
+         ]
+       )
+     ]
     [ variance_based_decomp {N_mdm(true,vbdFlag)}
       [ drop_tolerance REAL {N_mdm(Real,vbdDropTolerance)} ]
      ]
