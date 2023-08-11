@@ -884,7 +884,7 @@ public:
   /// Flag to indicate rank-1 lattice sampling
   bool rank1LatticeFlag;
   /// Flag to indicate randomization of low-discrepancy sequence
-  bool noRandomizeFlag;
+  bool noRandomShiftFlag;
   /// (log2 of) maximum number of points off low-discrepancy generator
   int log2MaxPoints;
   /// Inline generating vector of the rank-1 lattice rule

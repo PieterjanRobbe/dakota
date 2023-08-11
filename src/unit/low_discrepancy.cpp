@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(check_valid_input_file)
     "  sampling \n"
     "    sample_type low_discrepancy \n"
     "    samples 4 \n"
-    "    rank_1_lattice no_randomize \n"
+    "    rank_1_lattice no_random_shift \n"
     "variables \n"
     "  uniform_uncertain = 2 \n"
     "    lower_bounds = 0.0 0.0 \n"
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(check_refinement_samples)
     "    sample_type low_discrepancy \n"
     "    samples 2 \n"
     "    refinement_samples 2 4 \n"
-    "    rank_1_lattice no_randomize \n"
+    "    rank_1_lattice no_random_shift \n"
     "variables \n"
     "  uniform_uncertain = 2 \n"
     "    lower_bounds = 0.0 0.0 \n"
@@ -175,6 +175,7 @@ BOOST_AUTO_TEST_CASE(check_normal_random_samples)
     "    sample_type low_discrepancy \n"
     "    samples = 10000 \n"
     "    seed = 2023 \n"
+    "    rank_1_lattice \n"
     "variables \n"
     "  normal_uncertain = 2 \n"
     "    means = 0.0 1.0 \n"
@@ -246,7 +247,7 @@ BOOST_AUTO_TEST_CASE(check_transformed_uniform_samples)
     "  sampling \n"
     "    sample_type low_discrepancy \n"
     "    samples 4 \n"
-    "    rank_1_lattice no_randomize \n"
+    "    rank_1_lattice no_random_shift \n"
     "variables \n"
     "  uniform_uncertain = 2 \n"
     "    lower_bounds = -1.0 0.0 \n"
@@ -308,6 +309,7 @@ BOOST_AUTO_TEST_CASE(check_active_variables_sampling)
     "  sampling \n"
     "    sample_type low_discrepancy \n"
     "    samples 5 \n"
+    "    rank_1_lattice \n"
     "variables \n"
     "  normal_uncertain = 2 \n"
     "    means = 0.0 0.0 \n"
@@ -363,7 +365,7 @@ BOOST_AUTO_TEST_CASE(check_correlated_distributions)
     "  sampling \n"
     "    sample_type low_discrepancy \n"
     "    samples 4 \n"
-    "    rank_1_lattice no_randomize \n"
+    "    rank_1_lattice no_random_shift \n"
     "variables \n"
     "  normal_uncertain = 2 \n"
     "  means = 0.0 0.0 \n"
@@ -407,7 +409,7 @@ BOOST_AUTO_TEST_CASE(check_discrete_distributions)
     "  sampling \n"
     "    sample_type low_discrepancy \n"
     "    samples 4 \n"
-    "    rank_1_lattice no_randomize \n"
+    "    rank_1_lattice no_random_shift \n"
     "variables \n"
     "  weibull_uncertain = 1 \n"
     "    alphas = 1.0 \n"
@@ -452,17 +454,8 @@ BOOST_AUTO_TEST_CASE(check_points)
 {
   
   // Get rank-1 lattice rule
-  Dakota::UInt32Vector generatingVector(
-    Teuchos::View, Dakota::cools_kuo_nuyens_d250_m20, 250
-  );
-  Dakota::Rank1Lattice lattice(
-    generatingVector,
-    20,
-    false,
-    0,
-    Dakota::RADICAL_INVERSE_ORDERING,
-    Dakota::NORMAL_OUTPUT
-  );
+  Dakota::Rank1Lattice lattice;
+  lattice.no_random_shift();
 
   // Generate points of lattice rule
   size_t numPoints = 8;
@@ -726,20 +719,8 @@ BOOST_AUTO_TEST_CASE(check_generating_vector_from_file)
 // +-------------------------------------------------------------------------+
 BOOST_AUTO_TEST_CASE(check_lattice_rule_integration)
 {
-  // Get a generating vector
-  Dakota::UInt32Vector generatingVector(
-    Teuchos::View, Dakota::cools_kuo_nuyens_d250_m20, 250
-  );
-
   // Get randomly-shifted rank-1 lattice rule with a fixed seed
-  Dakota::Rank1Lattice lattice(
-    generatingVector,
-    20,
-    true,
-    17,
-    Dakota::RADICAL_INVERSE_ORDERING,
-    Dakota::NORMAL_OUTPUT
-  );
+  Dakota::Rank1Lattice lattice(17);
 
   // Get points from this lattice rule
   size_t numPoints = 1 << 15;
@@ -768,20 +749,9 @@ BOOST_AUTO_TEST_CASE(check_lattice_rule_integration)
 // +-------------------------------------------------------------------------+
 BOOST_AUTO_TEST_CASE(check_annulus_lattice_rules)
 {
-  // Get a generating vector
-  Dakota::UInt32Vector generatingVector(
-    Teuchos::View, Dakota::cools_kuo_nuyens_d250_m20, 250
-  );
-
+  
   // Get randomly-shifted rank-1 lattice rule with a fixed seed
-  Dakota::Rank1Lattice lattice(
-    generatingVector,
-    20,
-    true,
-    17,
-    Dakota::RADICAL_INVERSE_ORDERING,
-    Dakota::NORMAL_OUTPUT
-  );
+  Dakota::Rank1Lattice lattice(17);
 
   // Get points from this lattice rule
   size_t numPoints = 1 << 16;
@@ -805,50 +775,20 @@ BOOST_AUTO_TEST_CASE(check_annulus_lattice_rules)
 // +-------------------------------------------------------------------------+
 BOOST_AUTO_TEST_CASE(check_random_seed_lattice)
 {
-  // Get a generating vector
-  Dakota::UInt32Vector generatingVector(
-    Teuchos::View, Dakota::cools_kuo_nuyens_d250_m20, 250
-  );
-
+  
   // Get randomly-shifted rank-1 lattice rule with seed 17
-  Dakota::Rank1Lattice lattice_17a(
-    generatingVector,
-    20,
-    true,
-    17,
-    Dakota::RADICAL_INVERSE_ORDERING,
-    Dakota::NORMAL_OUTPUT
-  );
+  Dakota::Rank1Lattice lattice_17a(17);
 
   // Get another randomly-shifted rank-1 lattice rule with seed 17
-  Dakota::Rank1Lattice lattice_17b(
-    generatingVector,
-    20,
-    true,
-    17,
-    Dakota::RADICAL_INVERSE_ORDERING,
-    Dakota::NORMAL_OUTPUT
-  );
+  Dakota::Rank1Lattice lattice_17b(17);
 
   // Get randomly-shifted rank-1 lattice rule with random seed
-  Dakota::Rank1Lattice lattice_ra(
-    generatingVector,
-    20,
-    true,
-    0,
-    Dakota::RADICAL_INVERSE_ORDERING,
-    Dakota::NORMAL_OUTPUT
-  );
+  Dakota::Rank1Lattice lattice_ra;
 
   // Get randomly-shifted rank-1 lattice rule with another random seed
-  Dakota::Rank1Lattice lattice_rb(
-    generatingVector,
-    20,
-    true,
-    0,
-    Dakota::RADICAL_INVERSE_ORDERING,
-    Dakota::NORMAL_OUTPUT
-  );
+  Dakota::Rank1Lattice lattice_rb;
+
+  /// TODO: test seedValue 0
 
   // Generate points from these lattice rules
   size_t numPoints = 8;
@@ -914,7 +854,7 @@ BOOST_AUTO_TEST_CASE(check_disabled_randomization)
 {
   // Get rank-1 lattice rule
   Dakota::Rank1Lattice lattice;
-  lattice.no_randomize();
+  lattice.no_random_shift();
 
   // Generate points from this lattice rule
   size_t dimension = 2;
@@ -938,6 +878,48 @@ BOOST_AUTO_TEST_CASE(check_disabled_randomization)
     }
   }
   
+}
+
+// +-------------------------------------------------------------------------+
+// |                              Test seed 0                                |
+// +-------------------------------------------------------------------------+
+BOOST_AUTO_TEST_CASE(check_lattice_seed_0)
+{
+  
+  // Get randomly-shifted rank-1 lattice rule with seed 0
+  Dakota::Rank1Lattice lattice_0(0);
+
+  // Get another randomly-shifted rank-1 lattice rule with a random seed
+  Dakota::Rank1Lattice lattice;
+  lattice.no_random_shift();
+
+  // Generate points from these lattice rules
+  size_t numPoints = 8;
+  size_t dimension = 13;
+  Dakota::RealMatrix points_0(dimension, numPoints);
+  lattice_0.get_points(points_0);
+  Dakota::RealMatrix points(dimension, numPoints);
+  lattice.get_points(points);
+
+  // Check values of the lattice points
+  for ( size_t row = 0; row < numPoints; row++ )
+  {
+    for( size_t col = 0; col < dimension; col++ )
+    {
+      BOOST_CHECK_NE(points_0[row][col], points[row][col]);
+    }
+  }
+}
+
+// +-------------------------------------------------------------------------+
+// |                            Test negative seed                           |
+// +-------------------------------------------------------------------------+
+BOOST_AUTO_TEST_CASE(check_lattice_negative_seed)
+{
+  BOOST_CHECK_THROW(
+    Dakota::Rank1Lattice lattice(-1),
+    std::system_error
+  );
 }
 
 } // end namespace TestRank1Lattice

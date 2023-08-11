@@ -47,6 +47,7 @@ class DiscrepancyCorrection;
 typedef double Real;
 typedef std::string String;
 typedef std::uint32_t UInt32;
+typedef std::uint64_t UInt64;
 
 // -----------------------------------
 // Numerical arrays (serial/parallel):
@@ -56,8 +57,9 @@ typedef Teuchos::SerialDenseVector<int, Real>      RealVector;
 typedef Teuchos::SerialDenseMatrix<int, Real>      RealMatrix;
 typedef Teuchos::SerialSymDenseMatrix<int, Real>   RealSymMatrix;
 typedef Teuchos::SerialDenseVector<int, int>       IntVector;
-typedef Teuchos::SerialDenseVector<UInt32, UInt32> UInt32Vector;
+typedef Teuchos::SerialDenseVector<int, UInt32>    UInt32Vector;
 typedef Teuchos::SerialDenseMatrix<int, int>       IntMatrix;
+typedef Teuchos::SerialDenseMatrix<int, UInt64>    UInt64Matrix;
 typedef Teuchos::SerialDenseVector<int, size_t>    SizetVector;
 typedef Teuchos::SerialSymDenseMatrix<int, size_t> SizetSymMatrix;
 

@@ -28,20 +28,21 @@ namespace Dakota {
 Rank1Lattice::Rank1Lattice(
   const UInt32Vector& generatingVector,
   int mMax,
-  bool randomizeFlag,
+  bool randomShiftFlag,
   int seedValue,
   Rank1LatticeOrdering ordering,
   short outputLevel
 ) :
-LowDiscrepancySequence(seedValue, outputLevel),
+LowDiscrepancySequence(
+  mMax,
+  generatingVector.length(),
+  seedValue,
+  outputLevel
+),
 generatingVector(generatingVector),
-mMax(mMax),
-randomizeFlag(randomizeFlag),
+randomShiftFlag(randomShiftFlag),
 ordering(ordering)
 {
-  /// Set `dMax`
-  dMax = generatingVector.length();
-
   /// Check that `mMax` is larger than 0
   if ( mMax < 1 )
   {
@@ -52,15 +53,23 @@ ordering(ordering)
   }
   
   /// Check that `dMax` is larger than 0
-  if  ( dMax == 0 )
+  if ( dMax == 0 )
   {
     Cerr << "\nError: must have at least one element in the generating "
       <<  "vector, found 0." << std::endl;
     abort_handler(METHOD_ERROR);
   }
 
+  /// Check that `seedValue` is positive
+  if ( seedValue < 0 )
+  {
+    Cerr << "\nError: expected random seed value to be 0 or more, "
+      <<  "got " << seedValue << std::endl;
+    abort_handler(METHOD_ERROR);
+  }
+
   /// Print summary info when debugging
-  if ( get_output_level() >= DEBUG_OUTPUT )
+  if ( outputLevel >= DEBUG_OUTPUT )
   {
     Cout << "The maximum dimension of this rank-1 lattice rule is "
       << dMax << std::endl;
@@ -73,16 +82,14 @@ ordering(ordering)
   }
 
   ///
-  /// Options for setting the randomization of this rank-1 lattice rule
+  /// Options for setting the random shift of this rank-1 lattice rule
   ///
+  random_shift(randomShiftFlag ? seedValue : -1);
 
-  if ( randomizeFlag )
+  if ( randomShiftFlag )
   {
-    /// Generate a uniformly distributed random shift vector
-    randomize(get_seed());
-
     /// Print random shift vector when debugging
-    if ( get_output_level() >= DEBUG_OUTPUT )
+    if ( outputLevel >= DEBUG_OUTPUT )
     {
       Cout << "Using random shift ";
       for (size_t j=0; j < dMax; ++j)
@@ -92,13 +99,12 @@ ordering(ordering)
   }
   else
   {
-    // Zero random shift
-    no_randomize();
-
-    /// Print warning about missing randomization (will include the 0 point)
-    if ( get_output_level() >= VERBOSE_OUTPUT )
+    /// Print warning about missing random shift (will include the 0 point)
+    if ( outputLevel >= VERBOSE_OUTPUT )
+    {
       Cout << "WARNING: This lattice rule will not be randomized, samples "
         << "will include zeros as the first point!" << std::endl;
+    }
   }
 
   ///
@@ -108,42 +114,24 @@ ordering(ordering)
   /// Get the function pointer associated with the given ordering
   /// TODO: add gray code ordering?
   switch ( ordering ) {
-    case NATURAL_ORDERING:
+    case RANK_1_LATTICE_NATURAL_ORDERING:
       phi = &Rank1Lattice::natural;
-      if ( get_output_level() >= DEBUG_OUTPUT )
+      if ( outputLevel >= DEBUG_OUTPUT )
         Cout << "Using natural ordering of the lattice points" << std::endl;
       break;
-    case RADICAL_INVERSE_ORDERING:
+    case RANK_1_LATTICE_RADICAL_INVERSE_ORDERING:
       phi = &Rank1Lattice::radical_inverse;
-      if ( get_output_level() >= DEBUG_OUTPUT )
+      if ( outputLevel >= DEBUG_OUTPUT )
         Cout << "Using radical inverse ordering of the lattice points"
           << std::endl;
       break;
     default:
       phi = &Rank1Lattice::radical_inverse;
-      if ( get_output_level() >= DEBUG_OUTPUT )
+      if ( outputLevel >= DEBUG_OUTPUT )
         Cout << "No ordering provided, using fall-back option of "
           << "radical inverse ordering" << std::endl;
       break;
   }
-}
-
-/// A constructor that uses radical inverse ordering
-Rank1Lattice::Rank1Lattice(
-  const UInt32Vector& generatingVector,
-  int mMax,
-  int seedValue
-) :
-Rank1Lattice(
-  generatingVector,
-  mMax,
-  true,
-  seedValue,
-  RADICAL_INVERSE_ORDERING,
-  NORMAL_OUTPUT
-)
-{
-
 }
 
 /// A constructor that uses radical inverse ordering and a random shift
@@ -155,8 +143,24 @@ Rank1Lattice(
   generatingVector,
   mMax,
   true,
-  0,
-  RADICAL_INVERSE_ORDERING,
+  generate_system_seed(),
+  RANK_1_LATTICE_RADICAL_INVERSE_ORDERING,
+  NORMAL_OUTPUT
+)
+{
+
+}
+
+/// A constructor with only the random seed as argument
+Rank1Lattice::Rank1Lattice(
+  int seedValue
+) :
+Rank1Lattice(
+  UInt32Vector(Teuchos::View, cools_kuo_nuyens_d250_m20, 250),
+  20,
+  true,
+  seedValue,
+  RANK_1_LATTICE_RADICAL_INVERSE_ORDERING,
   NORMAL_OUTPUT
 )
 {
@@ -170,8 +174,8 @@ Rank1Lattice(
   UInt32Vector(Teuchos::View, cools_kuo_nuyens_d250_m20, 250),
   20,
   true,
-  0,
-  RADICAL_INVERSE_ORDERING,
+  generate_system_seed(),
+  RANK_1_LATTICE_RADICAL_INVERSE_ORDERING,
   NORMAL_OUTPUT
 )
 {
@@ -185,11 +189,11 @@ Rank1Lattice::Rank1Lattice(
 Rank1Lattice(
   get_generating_vector(problem_db),
   get_m_max(problem_db),
-  !problem_db.get_bool("method.no_randomize"),
+  !problem_db.get_bool("method.no_random_shift"),
   problem_db.get_int("method.random_seed"),
   problem_db.get_bool("method.ordering.natural") ? 
-    NATURAL_ORDERING :
-    RADICAL_INVERSE_ORDERING,
+    RANK_1_LATTICE_NATURAL_ORDERING :
+    RANK_1_LATTICE_RADICAL_INVERSE_ORDERING,
   problem_db.get_short("method.output")
 )
 {
@@ -232,7 +236,7 @@ const UInt32Vector Rank1Lattice::get_generating_vector(
   /// Case I: the generating vector is provided in an external file
   if ( !file.empty() )
   {
-    if ( get_output_level() >= DEBUG_OUTPUT )
+    if ( outputLevel >= DEBUG_OUTPUT )
       Cout << "Reading generating vector from file " << file << "..."
         << std::endl;
     std::ifstream io;
@@ -249,7 +253,7 @@ const UInt32Vector Rank1Lattice::get_generating_vector(
   /// Case II: the generating vector is provided in the input file
   else if ( len > 0 )
   {
-    if ( get_output_level() >= DEBUG_OUTPUT )
+    if ( outputLevel >= DEBUG_OUTPUT )
       Cout << "Reading inline generating vector..." << std::endl;
     UInt32Vector generatingVector;
     generatingVector.resize(len);
@@ -272,14 +276,14 @@ const UInt32Vector Rank1Lattice::get_generating_vector(
     /// Select default generating vector
     if ( problem_db.get_bool("method.kuo") )
     {
-      if ( get_output_level() >= DEBUG_OUTPUT )
+      if ( outputLevel >= DEBUG_OUTPUT )
         Cout << "Found default generating vector 'kuo'"
           << std::endl;
       return UInt32Vector(Teuchos::View, kuo_d3600_m20, 3600);
     }
     else
     {
-      if ( get_output_level() >= DEBUG_OUTPUT )
+      if ( outputLevel >= DEBUG_OUTPUT )
       {
         if ( problem_db.get_bool("method.cools_kuo_nuyens") )
           Cout << "Found default generating vector 'cools_kuo_nuyens'"
@@ -330,67 +334,10 @@ Rank1Lattice::~Rank1Lattice()
 
 }
 
-/// Generates rank-1 lattice points 
-/// Returns the points with index `nMin`, `nMin` + 1, ..., `nMax` - 1
-/// This function will store the points in-place in the matrix `points`
-/// Each column of `points` contains a `dimension`-dimensional point
-/// where `dimension` is equal to the number of rows of `points`
-void Rank1Lattice::get_points(
-  const size_t nMin,
-  const size_t nMax, 
-  RealMatrix& points
-)
-{
-  /// Set dimension
-  set_dimension(points.numRows());
-
-  /// Check sizes of the matrix `points`
-  check_sizes(nMin, nMax, points);
-
-  /// Generate the rank-1 lattice points
-  for ( UInt32 k=nMin; k<nMax; ++k )
-  {
-    Real phik = (this->*phi)(k);
-    for ( int j=0; j<get_dimension(); ++j )
-    {
-      Real point = phik * generatingVector[j] + randomShift[j];
-      points[k - nMin][j] = point - std::floor(point);
-    }
-  }
-
-  /// Print summary info
-  if ( get_output_level() >= DEBUG_OUTPUT )
-  {
-    Cout << "Successfully generated " << points.numCols() << " rank-1 lattice "
-      << "points in " << points.numRows() << " dimensions:" << std::endl;
-    for ( int col=0; col<points.numCols(); ++col )
-    {
-      Cout << col + nMin << ": ";
-      for ( int row=0; row<points.numRows(); ++row )
-        Cout << points[col][row] << " ";
-      Cout << std::endl;
-    }
-  }
-    
-}
-
-/// Randomize this low-discrepancy sequence
-void Rank1Lattice::randomize()
-{
-  randomize(std::time(0));
-}
-
-/// Remove randomization of this low-discrepancy sequence
-void Rank1Lattice::no_randomize()
-{
-  randomize(-1);
-}
-
 /// Randomize this low-discrepancy sequence
 /// Uses the given seed to initialize the RNG
-/// When the seed is < 0, the random shift will be set to 0 (effectively
-/// removing the randomization)
-void Rank1Lattice::randomize(
+/// When the seed is < 0, the random shift will be removed
+void Rank1Lattice::random_shift(
   int seed
 )
 {
@@ -402,48 +349,40 @@ void Rank1Lattice::randomize(
   // const RealVector upper(Teuchos::View, ones, dMax);
   // Pecos::LHSDriver lhsDriver("random");
   // RealSymMatrix corr; // Uncorrelated random variables
-  // lhsDriver.seed(get_seed());
+  // lhsDriver.seed(seedValue);
   // lhsDriver.generate_uniform_samples(lower, upper, corr, 1, randomShift);
   boost::random::mt19937 rng(std::max(0, seed));
   boost::uniform_01<boost::mt19937> sampler(rng);
   randomShift.resize(dMax);
   for (size_t j=0; j < dMax; ++j)
+  {
     randomShift[j] = seed < 0 ? 0 : sampler();
+  }
 }
 
-/// Perform checks on the matrix `points`
-/// The number of points `numPoints` is `nMax` - `nMin`
-/// Checks if the requested number of points `numPoints` exceeds the maximum 
-/// number of points of this rank-1 lattice rule
-/// Checks if the matrix `points` has `numPoints` columns
-void Rank1Lattice::check_sizes(
+/// Generates rank-1 lattice points without error checking
+/// Returns the points with index `nMin`, `nMin` + 1, ..., `nMax` - 1
+/// This function will store the points in-place in the matrix `points`
+/// Each column of `points` contains a `dimension`-dimensional point
+/// where `dimension` is equal to the number of rows of `points`
+void Rank1Lattice::unsafe_get_points(
   const size_t nMin,
   const size_t nMax, 
   RealMatrix& points
 )
 {
-  /// Check if maximum number of points is exceeded
-  auto maxPoints = (1 << mMax);
-  if (nMax > maxPoints)
+  for ( UInt32 k=nMin; k<nMax; ++k )
   {
-    Cerr << "\nError: requested number of samples " << nMax
-      << " is larger than the maximum allowed number of points "
-      << maxPoints << "." << std::endl;
-    abort_handler(METHOD_ERROR);
-  }
-
-  /// Check dimension of points
-  auto numPoints = points.numCols();
-  if ( numPoints != nMax - nMin )
-  {
-    Cerr << "\nError: requested lattice points between index " << nMin
-      << " and " << nMax << ", but the provided matrix expects "
-      << numPoints << " points." << std::endl;
-    abort_handler(METHOD_ERROR);
+    Real phik = (this->*phi)(k);
+    for ( int j=0; j<points.numRows(); ++j )
+    {
+      Real point = phik * generatingVector[j] + randomShift[j];
+      points[k - nMin][j] = point - std::floor(point);
+    }
   }
 }
 
-/// For use with the NATURAL ordering of the points
+/// For use with the RANK_1_LATTICE_NATURAL_ORDERING of the points
 Real Rank1Lattice::natural(
   UInt32 k
 )
@@ -451,7 +390,7 @@ Real Rank1Lattice::natural(
   return k / Real(1 << mMax);
 }
 
-/// For use with the RADICAL_INVERSE ordering of the points
+/// For use with the RANK_1_LATTICE_RADICAL_INVERSE_ORDERING of the points
 Real Rank1Lattice::radical_inverse(
   UInt32 k
 )

@@ -2696,7 +2696,7 @@ bool ProblemDescDB::get_bool(const String& entry_name) const
       {"variance_based_decomp", P_MET vbdFlag},
       {"wilks", P_MET wilksFlag},
       {"rank_1_lattice", P_MET rank1LatticeFlag},
-      {"no_randomize", P_MET noRandomizeFlag},
+      {"no_random_shift", P_MET noRandomShiftFlag},
       {"kuo", P_MET kuo},
       {"cools_kuo_nuyens", P_MET cools_kuo_nuyens},
       {"ordering.natural", P_MET naturalOrdering},

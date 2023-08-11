@@ -2981,7 +2981,7 @@
 	  </keyword>
     <optional>
       <keyword id="rank_1_lattice" name="rank_1_lattice" code="{N_mdm(true,rank1LatticeFlag)}" label="Options for rank-1 lattice samples" default="No rank-1 lattice sampling">
-        <keyword id="no_randomize" name="no_randomize" code="{N_mdm(true,noRandomizeFlag)}" label="no_randomize" minOccurs="0">
+        <keyword id="no_random_shift" name="no_random_shift" code="{N_mdm(true,noRandomShiftFlag)}" label="no_random_shift" minOccurs="0">
         </keyword>
         <keyword id="m_max" name="m_max" code="{N_mdm(int,log2MaxPoints)}" label="m_max" minOccurs="0" default="0">
           <param type="INTEGER" constraint=">= 0" />

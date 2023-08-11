@@ -24,8 +24,8 @@ namespace Dakota {
 
 /// Enum for rank-1 lattice rule ordering
 enum Rank1LatticeOrdering {
-  NATURAL_ORDERING,
-  RADICAL_INVERSE_ORDERING
+  RANK_1_LATTICE_NATURAL_ORDERING,
+  RANK_1_LATTICE_RADICAL_INVERSE_ORDERING
 };
 
 /// Class for rank-1 lattice rules in Dakota
@@ -33,31 +33,25 @@ class Rank1Lattice : public LowDiscrepancySequence
 {
 public:
 
-  //
-  //- Heading: Constructors and destructor
-  //
-
   /// Default constructor
   Rank1Lattice(
     const UInt32Vector& generatingVector,
     int mMax,
-    bool randomizeFlag,
+    bool randomShiftFlag,
     int seedValue,
     Rank1LatticeOrdering ordering,
     short outputLevel
-  );
-
-  /// A constructor that uses radical inverse ordering
-  Rank1Lattice(
-    const UInt32Vector& generatingVector,
-    int mMax,
-    int seedValue
   );
 
   /// A constructor that uses radical inverse ordering and a random shift
   Rank1Lattice(
     const UInt32Vector& generatingVector,
     int mMax
+  );
+
+  /// A constructor with only the random seed as argument
+  Rank1Lattice(
+    int seedValue
   );
 
   /// A constructor with no arguments
@@ -71,57 +65,29 @@ public:
   /// Destructor
   ~Rank1Lattice();
 
-  /// Get the overloaded function `get_points`
-  using LowDiscrepancySequence::get_points;
+  /// Randomize this rank-1 lattice rule
+  /// NOTE: required for 'unique' sampling in `NonDLowDiscrepancySampling`
+  inline void randomize() { random_shift(); }
 
-  /// Generates rank-1 lattice points
-  void get_points(
-    const size_t nMin,
-    const size_t nMax,
-    RealMatrix& points
-  );
+  /// Randomly shift this rank-1 lattice rule
+  void random_shift() { random_shift(generate_system_seed()); }
 
-  /// Randomize this low-discrepancy sequence
-  void randomize();
-
-  /// Remove randomization of this low-discrepancy sequence
-  void no_randomize();
-
-protected:
-
-  //
-  //- Heading: Virtual function redefinitions
-  //
-
-  //
-  //- Heading: Member functions
-  //
+  /// Do not randomly shift this rank-1 lattice rule
+  void no_random_shift() { random_shift(-1); }
 
 private:
-
-  //
-  //- Heading: Data
-  //
 
   /// Generating vector of this rank-1 lattice rule
   UInt32Vector generatingVector;
 
-  /// 2^mMax is the maximum number of points of this rank-1 lattice rule
-  /// Also: length of the generating vector
-  int mMax;
-
   /// Randomize this rank-1 lattice rule if true
-  bool randomizeFlag;
+  bool randomShiftFlag;
 
   /// Random shift associated with this rank-1 lattice rule
   RealVector randomShift;
 
-  /// Ordering of the points of this rank-1 lattice rule
+  /// Order of the points of this rank-1 lattice rule
   Rank1LatticeOrdering ordering;
-
-  //
-  //- Heading: Convenience functions
-  //
 
   /// Extract the generating vector from the given problem description database
   const UInt32Vector get_generating_vector(
@@ -134,32 +100,31 @@ private:
     ProblemDescDB& problem_db
   );
 
-  /// Randomize this low-discrepancy sequence
+  /// Apply random shift to this rank-1 lattice rule
   /// Uses the given seed to initialize the RNG
-  /// When the seed is < 0, the random shift will be set to 0 (effectively
-  /// removing the randomization)
-  void randomize(
+  /// When the seed is < 0, the random shift will be removed
+  void random_shift(
     int seed
   );
 
-  /// Performs checks on the matrix `points`
-  void check_sizes(
+  /// Generates rank-1 lattice points without error checking
+  void unsafe_get_points(
     const size_t nMin,
     const size_t nMax,
     RealMatrix& points
   );
 
-  /// For use with the NATURAL ordering of the points
+  /// For use with the RANK_1_LATTICE_NATURAL_ORDERING of the points
   Real natural(
     UInt32 k
   );
 
-  /// For use with the RADICAL_INVERSE ordering of the points
+  /// For use with the RANK_1_LATTICE_RADICAL_INVERSE_ORDERING of the points
   Real radical_inverse(
     UInt32 k
   );
 
-  /// Function pointer to the chosen ordering of the points
+  /// Function pointer to the chosen order of the points
   Real (Rank1Lattice::*phi)(
     UInt32
   );

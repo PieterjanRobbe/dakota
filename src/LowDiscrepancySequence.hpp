@@ -26,6 +26,10 @@ namespace Dakota {
 
 /** This abstract class provides uniform access to all low-discrepancy 
     sequences through the `get_points` function.
+
+    Derived classes must provide implementations for the private virtual method 
+    `unsafe_get_points(nMin, nMax, points)` and the public virtual method 
+    `randomize()`
 */
 class LowDiscrepancySequence
 {
@@ -33,13 +37,18 @@ public:
 
   /// Default constructor
   LowDiscrepancySequence(
+    int mMax,
+    int dMax,
     int seedValue,
     short outputLevel
-  ) : 
-  seedValue(seedValue > 0 ? seedValue : generate_system_seed()),
+  ) :
+  mMax(mMax),
+  dMax(dMax),
+  seedValue(seedValue),
   outputLevel(outputLevel)
   {
-
+    /// NOTE: error checking of the inputs is delegated to the constructor of
+    /// the derived class in order to provide more meaningful error messages
   }
 
   /// Destructor
@@ -47,32 +56,6 @@ public:
   {
 
   }
-
-  /// Getter and setter for dimension
-  size_t get_dimension() { return dimension; }
-
-  void set_dimension(
-    size_t dimension
-  )
-  {
-    /// Check if maximum dimension is exceeded
-    if (dimension > dMax)
-    {
-      Cerr << "\nError: this low-discrepancy sequence can only generate "
-        << "points in dimension " << dMax << " or less, got " 
-        << get_dimension() << "." << std::endl;
-      abort_handler(METHOD_ERROR);
-    }
-    this->dimension = dimension;
-  }
-
-  // /// Getter and setter for seedValue
-  size_t get_seed() { return seedValue; }
-
-  void set_seed(int seedValue) { this->seedValue = seedValue; }
-
-  /// Getter for output level
-  short get_output_level() { return outputLevel; }
 
   /// Get points from this low-discrepancy generator
   /// This function will store the points in-place in the matrix `points`
@@ -98,16 +81,43 @@ public:
     get_points(0, n, points);
   }
 
-  /// Generate low-discrepancy points between `nMin` and `nMax` 
+  /// Generates low-discrepancy points between given indices
+  /// Returns the points with index `nMin`, `nMin` + 1, ..., `nMax` - 1
   /// This function will store the points in-place in the matrix `points`
   /// Each column of `points` contains a `dimension`-dimensional point
-  virtual void get_points(
-      const size_t nMin,
-      const size_t nMax, 
-      RealMatrix& points
-  ) = 0;
+  void get_points(
+    const size_t nMin,
+    const size_t nMax, 
+    RealMatrix& points
+  )
+  {
+    /// Check sizes of the matrix `points`
+    check_sizes(nMin, nMax, points);
+
+    /// Get the low-discrepancy points
+    unsafe_get_points(nMin, nMax, points);
+
+    /// Print summary info
+    if ( outputLevel >= Pecos::DEBUG_OUTPUT )
+    {
+      Cout << "Successfully generated " << points.numCols()
+        << " low-discrepancy points in " << points.numRows() << " dimensions:"
+        << std::endl;
+      for ( int col=0; col<points.numCols(); ++col )
+      {
+        Cout << col + nMin << ": ";
+        for ( int row=0; row<points.numRows(); ++row )
+        {
+          Cout << points[col][row] << " ";
+        }
+        Cout << std::endl;
+      }
+    }
+  }
 
   /// Randomize this low-discrepancy sequence
+  /// NOTE: this function is required by `NonDLowDiscrepancySampling` for
+  /// generating unique samples
   virtual void randomize() = 0;
 
 protected:
@@ -115,19 +125,11 @@ protected:
   /// Maximum dimension of this low-discrepancy sequence
   int dMax;
 
-  /// Move check_sizes, mMax, bitreverse, ... to this level
-  /// TODO: move some stuff to this level
-  /// Performs checks on the matrix `points`
-  // void check_sizes(
-  //   const size_t nMin,
-  //   const size_t nMax,
-  //   RealMatrix& points
-  // );
-
-private:
-
-  /// The dimension of this low-discrepancy sequence
-  size_t dimension{0};
+  /// `log2` of the maximum number of points of this low-discrepancy sequence
+  /// - For rank-1 lattices, this is also the length of the generating vector
+  /// - For digital nets, this is also the number of columns of each generating
+  ///   matrix
+  int mMax;
 
   /// The seed of this low-discrepancy sequence
   int seedValue;
@@ -135,6 +137,59 @@ private:
   /// The output verbosity level, can be one of
   /// {SILENT, QUIET, NORMAL, VERBOSE, DEBUG}_OUTPUT
   short outputLevel;
+
+  /// Perform checks on the matrix `points`
+  /// Each column of `points` contains a `dimension`-dimensional point
+  /// where `dimension` is equal to the number of rows of `points` 
+  /// The number of points `numPoints` is `nMax` - `nMin`
+  /// Checks if the requested number of points `numPoints` exceeds the maximum 
+  /// number of points allowed in this low-discrepancy sequence
+  /// Checks if the number of rows of the matrix `points` exceeds the maximum
+  /// dimension allowed in this low-discrepancy sequence
+  /// Checks if the matrix `points` has `numPoints` columns
+  void check_sizes(
+    const size_t nMin,
+    const size_t nMax, 
+    RealMatrix& points
+  )
+  {
+    /// Check if maximum number of points is exceeded
+    auto maxPoints = (1 << mMax);
+    if ( nMax > maxPoints )
+    {
+      Cerr << "\nError: requested number of samples " << nMax
+        << " is larger than the maximum allowed number of points "
+        << maxPoints << "." << std::endl;
+      abort_handler(METHOD_ERROR);
+    }
+
+    /// Check if maximum dimension is exceeded
+    auto dimension = points.numRows();
+    if ( dimension > dMax )
+    {
+      Cerr << "\nError: this low-discrepancy sequence can only generate "
+        << "points in dimension " << dMax << " or less, got " 
+        << dimension << "." << std::endl;
+      abort_handler(METHOD_ERROR);
+    }
+    
+    /// Check number of columns of points
+    auto numPoints = points.numCols();
+    if ( numPoints != nMax - nMin )
+    {
+      Cerr << "\nError: requested low-discrepancy points between index " 
+        << nMin << " and " << nMax << ", but the provided matrix expects "
+        << numPoints << " points." << std::endl;
+      abort_handler(METHOD_ERROR);
+    }
+  }
+
+  /// Generate points from this low-discrepancy sequence
+  virtual void unsafe_get_points(
+      const size_t nMin,
+      const size_t nMax, 
+      RealMatrix& points
+  ) = 0;
 
 };
 

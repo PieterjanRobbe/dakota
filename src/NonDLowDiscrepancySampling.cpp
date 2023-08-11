@@ -17,6 +17,7 @@
 #include "NonDLowDiscrepancySampling.hpp"
 #include "ProbabilityTransformModel.hpp"
 #include "Rank1Lattice.hpp"
+#include "DigitalNet.hpp"
 
 namespace Dakota {
 
@@ -30,9 +31,11 @@ NonDLowDiscrepancySampling::NonDLowDiscrepancySampling(
 ) : 
 NonDLHSSampling(problem_db, model),
 sequence(
-  problem_db.get_bool("method.rank_1_lattice") ? new Rank1Lattice(problem_db) :
-    // new DigitalNet(problem_db)
-    new Rank1Lattice(problem_db)
+  /// NOTE: static cast because the ternary conditional operator requires its 
+  /// second and third operands to have the same type.
+  problem_db.get_bool("method.rank_1_lattice") ? 
+    static_cast<LowDiscrepancySequence*>(new Rank1Lattice(problem_db)) :
+    static_cast<LowDiscrepancySequence*>(new DigitalNet(problem_db))
 ), 
 colPtr(0)
 {

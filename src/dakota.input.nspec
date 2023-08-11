@@ -2705,7 +2705,7 @@ KEYWORD method {N_mdm3(start,0,stop)}
      ]
     [ 
       ( rank_1_lattice {N_mdm(true,rank1LatticeFlag)}
-        [ no_randomize {N_mdm(true,noRandomizeFlag)} ]
+        [ no_random_shift {N_mdm(true,noRandomShiftFlag)} ]
         [ m_max INTEGER >= 0 {N_mdm(int,log2MaxPoints)} ]
         [ generating_vector {0}
           inline INTEGERLIST {N_mdm(ivec,generatingVector)}

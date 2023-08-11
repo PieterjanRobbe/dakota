@@ -6947,7 +6947,7 @@ static bool
 	MP_(volQualityFlag),
 	MP_(wilksFlag),
   MP_(rank1LatticeFlag),
-  MP_(noRandomizeFlag),
+  MP_(noRandomShiftFlag),
   MP_(kuo),
   MP_(cools_kuo_nuyens),
   MP_(naturalOrdering),
