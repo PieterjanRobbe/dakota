@@ -140,7 +140,7 @@ Rank1Lattice::Rank1Lattice(
   int seedValue
 ) :
 Rank1Lattice(
-  UInt32Vector(Teuchos::View, cools_kuo_nuyens_d250_m20, 250),
+  UInt32Vector(Teuchos::View, &cools_kuo_nuyens_d250_m20[0], 250),
   20,
   true,
   seedValue,
@@ -155,7 +155,7 @@ Rank1Lattice(
 Rank1Lattice::Rank1Lattice(
 ) :
 Rank1Lattice(
-  UInt32Vector(Teuchos::View, cools_kuo_nuyens_d250_m20, 250),
+  UInt32Vector(Teuchos::View, &cools_kuo_nuyens_d250_m20[0], 250),
   20,
   true,
   generate_system_seed(),
@@ -262,9 +262,7 @@ std::tuple<UInt32Vector, int> Rank1Lattice::get_data(
     problem_db.get_iv("method.generating_vector.inline");
   size_t len = inlineVector.length();
 
-  ///
   /// Case I: the generating vector is provided in an external file
-  ///
   if ( !file.empty() )
   {
     if ( outputLevel >= DEBUG_OUTPUT )
@@ -272,31 +270,11 @@ std::tuple<UInt32Vector, int> Rank1Lattice::get_data(
       Cout << "Reading generating vector from file " << file << "..."
         << std::endl;
     }
-
-    /// Read the generating vector from file
-    std::ifstream io;
-    TabularIO::open_file(io, file, "read_generating_vector");
-    RealVectorArray z;
-    read_unsized_data(io, z, false);
-    size_t len = z[0].length();
-    UInt32Vector generatingVector;
-
-    /// Populate the generating vector
-    generatingVector.resize(len);
-    for (size_t j=0; j<len; ++j)
-    {
-      generatingVector[j] = UInt32(z[0][j]);
-    }
-
-    /// Return tuple
-    return std::make_tuple(
-      generatingVector,
-      problem_db.get_int("method.m_max")
-    );
+    
+    return get_generating_vector_from_file(problem_db);
   }
-  ///
+
   /// Case II: the generating vector is provided in the input file
-  ///
   else if ( len > 0 )
   {
     if ( outputLevel >= DEBUG_OUTPUT )
@@ -304,23 +282,10 @@ std::tuple<UInt32Vector, int> Rank1Lattice::get_data(
       Cout << "Reading inline generating vector..." << std::endl;
     }
 
-    /// Populate the generating vector
-    UInt32Vector generatingVector;
-    generatingVector.resize(len);
-    for (size_t j=0; j<len; ++j)
-    {
-      generatingVector[j] = inlineVector[j];
-    }
-
-    /// Return tuple
-    return std::make_tuple(
-      generatingVector,
-      problem_db.get_int("method.m_max")
-    );
+    return get_inline_generating_vector(problem_db);
   }
-  ///
+
   /// Case III: a default generating vector has been selected
-  ///
   else
   {
     /// Verify that `mMax` has not been provided
@@ -332,41 +297,106 @@ std::tuple<UInt32Vector, int> Rank1Lattice::get_data(
       abort_handler(METHOD_ERROR);
     }
 
-    /// Select default generating vector
-    if ( problem_db.get_bool("method.kuo") )
+    return get_default_generating_vector(problem_db);
+  }
+}
+
+/// Case I: the generating vector is provided in an external file
+const std::tuple<UInt32Vector, int> Rank1Lattice::get_generating_vector_from_file(
+  ProblemDescDB& problem_db
+)
+{
+  String fileName = problem_db.get_string("method.generating_vector.file");
+
+  /// Wrap in try-block
+  try{
+    int nbOfRows = count_rows(fileName);
+    UInt32Vector generatingVector(nbOfRows);
+    std::fstream file(fileName);
+    String line;
+    int j = 0;
+    while (std::getline(file, line))
     {
-      if ( outputLevel >= DEBUG_OUTPUT )
+      generatingVector[j++] = std::stoull(line);
+    }
+
+    return std::make_tuple(
+      generatingVector,
+      problem_db.get_int("method.m_max")
+    );
+  }
+  catch (...) /// Catch-all handler
+  {
+    Cerr << "Error: error while parsing generating vector from file '"
+      << fileName << "'" << std::endl;
+    abort_handler(METHOD_ERROR);
+
+  }
+}
+
+/// Case II: the generating vector is provided in the input file
+const std::tuple<UInt32Vector, int> Rank1Lattice::get_inline_generating_vector(
+  ProblemDescDB& problem_db
+)
+{
+  /// Get the inline generating vector
+  IntVector inlineVector = 
+    problem_db.get_iv("method.generating_vector.inline");
+  size_t len = inlineVector.length();
+  
+  /// Can't get away without making a copy here, conversion from
+  /// int to UInt32, maybe there's a smarter way to do this?
+  UInt32Vector generatingVector;
+  generatingVector.resize(len);
+  for (size_t j = 0; j < len; ++j)
+  {
+    generatingVector[j] = inlineVector[j];
+  }
+
+  return std::make_tuple(
+    generatingVector,
+    problem_db.get_int("method.m_max")
+  );
+}
+
+/// Case III: a default generating vector has been selected
+const std::tuple<UInt32Vector, int> Rank1Lattice::get_default_generating_vector(
+  ProblemDescDB& problem_db
+)
+{
+  if ( problem_db.get_bool("method.kuo") )
+  {
+    if ( outputLevel >= DEBUG_OUTPUT )
+    {
+      Cout << "Found default generating vector 'kuo'"
+        << std::endl;
+    }
+
+    return std::make_tuple(
+      UInt32Vector(Teuchos::View, &kuo_d3600_m20[0], 3600),
+      20
+    );
+  }
+  else
+  {
+    if ( outputLevel >= DEBUG_OUTPUT )
+    {
+      if ( problem_db.get_bool("method.cools_kuo_nuyens") )
       {
-        Cout << "Found default generating vector 'kuo'"
+        Cout << "Found default generating vector 'cools_kuo_nuyens'"
           << std::endl;
       }
-
-      return std::make_tuple(
-        UInt32Vector(Teuchos::View, kuo_d3600_m20, 3600),
-        20
-      );
-    }
-    else
-    {
-      if ( outputLevel >= DEBUG_OUTPUT )
+      else
       {
-        if ( problem_db.get_bool("method.cools_kuo_nuyens") )
-        {
-          Cout << "Found default generating vector 'cools_kuo_nuyens'"
-            << std::endl;
-        }
-        else
-        {
-          Cout << "No generating vector provided, using fall-back option "
-            << "'cools_kuo_nuyens'" << std::endl;
-        }
+        Cout << "No generating vector provided, using fall-back option "
+          << "'cools_kuo_nuyens'" << std::endl;
       }
-
-      return std::make_tuple(
-        UInt32Vector(Teuchos::View, cools_kuo_nuyens_d250_m20, 250),
-        20
-      );
     }
+
+    return std::make_tuple(
+      UInt32Vector(Teuchos::View, &cools_kuo_nuyens_d250_m20[0], 250),
+      20
+    );
   }
 }
 

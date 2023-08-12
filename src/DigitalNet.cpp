@@ -14,7 +14,6 @@
 //- Version:
 
 /// TODO:
-/// - make current version
 /// - add a lot of tests
 /// - implement scrambling
 /// - make slides
@@ -177,7 +176,7 @@ DigitalNet::DigitalNet(
   int seedValue
 ) :
 DigitalNet(
-  UInt64Matrix(Teuchos::View, *joe_kuo_d250_t32_m32, 250, 250, 32),
+  UInt64Matrix(Teuchos::View, &joe_kuo_d250_t32_m32[0][0], 32, 32, 250),
   32,
   32,
   32,
@@ -196,7 +195,7 @@ DigitalNet(
 DigitalNet::DigitalNet(
 ) :
 DigitalNet(
-  UInt64Matrix(Teuchos::View, *joe_kuo_d250_t32_m32, 250, 250, 32),
+  UInt64Matrix(Teuchos::View, &joe_kuo_d250_t32_m32[0][0], 32, 32, 250),
   32,
   32,
   32,
@@ -234,7 +233,7 @@ DigitalNet(
   std::get<2>(data),
   problem_db.get_int("method.t_scramble"),
   !problem_db.get_bool("method.no_digital_shift"),
-  !problem_db.get_bool("method.no_scramble"),
+  !problem_db.get_bool("method.no_scrambling"),
   problem_db.get_int("method.random_seed"),
   problem_db.get_bool("method.ordering.natural") ? 
     DIGITAL_NET_NATURAL_ORDERING :
@@ -287,8 +286,6 @@ std::tuple<UInt64Matrix, int, int> DigitalNet::get_data(
   /// Get the inline generating matrices
   IntMatrix inlineMatrices = 
     problem_db.get_im("method.generating_matrices.inline");
-  size_t rows = inlineMatrices.numRows();
-  size_t cols = inlineMatrices.numCols();
 
   ///
   /// Case I: the generating matrices are provided in an external file
@@ -300,61 +297,21 @@ std::tuple<UInt64Matrix, int, int> DigitalNet::get_data(
       Cout << "Reading generating matrices from file " << file << "..."
         << std::endl;
     }
-
-    /// Read the generating vector from file
-    std::ifstream io;
-    TabularIO::open_file(io, file, "read_generating_matrices");
-    RealVectorArray C;
-    read_unsized_data(io, C, false);
-    size_t numCols = C.size();
-    size_t numRows = C[0].length();
-    UInt64Matrix generatingMatrices;
-
-    /// Populate the generating vector
-    generatingMatrices.reshape(numRows, numCols);
-    for (size_t col = 0; col < numCols; col++)
-    {
-      for (size_t row = 0; row < numRows; row++)
-      {
-        generatingMatrices[col][row] = UInt64(C[col][row]);
-      }
-    }
-
-    /// Return tuple
-    return std::make_tuple(
-      generatingMatrices,
-      problem_db.get_int("method.m_max"),
-      problem_db.get_int("method.t_max")
-    );
+    
+    return get_generating_matrices_from_file(problem_db);
   }
 
   ///
   /// Case II: the generating matrices are provided in the input file
   ///
-  else if ( cols > 0 )
+  else if ( !inlineMatrices.empty() )
   {
     if ( outputLevel >= DEBUG_OUTPUT )
     {
       Cout << "Reading inline generating matrices..." << std::endl;
     }
 
-    /// Populate the generating matrices
-    UInt64Matrix generatingMatrices;
-    generatingMatrices.reshape(rows, cols);
-    for (size_t col = 0; col < cols; col++)
-    {
-      for (size_t row = 0; row < rows; row++)
-      {
-        generatingMatrices[col][row] = inlineMatrices[col][row];
-      }
-    }
-
-    /// Return tuple
-    return std::make_tuple(
-      generatingMatrices,
-      problem_db.get_int("method.m_max"),
-      problem_db.get_int("method.t_max")
-    );
+    return get_inline_generating_matrices(problem_db);
   }
 
   ///
@@ -380,65 +337,122 @@ std::tuple<UInt64Matrix, int, int> DigitalNet::get_data(
       abort_handler(METHOD_ERROR);
     }
 
-    /// Select default generating matrices
-    if ( problem_db.get_bool("method.joe_kuo") )
+    return get_default_generating_matrices(problem_db);
+  }
+}
+
+/// Case I: the generating matrices are provided in an external file
+const std::tuple<UInt64Matrix, int, int> DigitalNet::get_generating_matrices_from_file(
+  ProblemDescDB& problem_db
+)
+{
+  String fileName = problem_db.get_string("method.generating_matrices.file");
+
+  /// Wrap in try-block
+  try{
+    int nbOfRows = count_rows(fileName);
+    int nbOfCols = count_columns(fileName);
+    UInt64Matrix generatingMatrices(nbOfRows, nbOfCols);
+    std::fstream file(fileName);
+    String line;
+    String number;
+    int row = 0;
+    while (std::getline(file, line))
     {
-      if ( outputLevel >= DEBUG_OUTPUT )
+      std::stringstream numbers(line);
+      int col = 0;
+      while ( numbers >> number )
       {
-        Cout << "Found default generating matrices 'joe_kuo'." << std::endl;
+        generatingMatrices(row++, col++) = std::stoull(number); 
       }
-
-      /// Need to make an explicit copy, can't get around that
-      size_t rows = 32;
-      size_t cols = 250;
-      UInt64 predefined_matrices[cols*rows];
-      for ( size_t row = 0; row < cols; row++ )
-      {
-        for ( size_t col = 0; col < rows; col++ )
-        {
-          predefined_matrices[col*cols + row] = joe_kuo_d250_t32_m32[row][col];
-        }
-      }
-
-      return std::make_tuple(
-        UInt64Matrix(Teuchos::View, predefined_matrices, rows, rows, cols),
-        rows,
-        rows
-      );
     }
-    else
+
+    return std::make_tuple(
+      generatingMatrices,
+      problem_db.get_int("method.m_max"),
+      problem_db.get_int("method.t_max")
+    );
+  }
+  catch (...) /// Catch-all handler
+  {
+    Cerr << "Error: error while parsing generating vector from file '"
+      << fileName << "'" << std::endl;
+    abort_handler(METHOD_ERROR);
+
+  }
+}
+
+/// Case II: the generating matrices are provided in the input file
+const std::tuple<UInt64Matrix, int, int> DigitalNet::get_inline_generating_matrices(
+  ProblemDescDB& problem_db
+)
+{
+  /// Get the inline generating vector
+  IntMatrix inlineMatrices = 
+    problem_db.get_im("method.generating_matrices.inline");
+  int numRows = inlineMatrices.numRows();
+  int numCols = inlineMatrices.numCols();
+  
+  /// Can't get away without making a copy here, conversion from
+  /// int to UInt64, maybe there's a smarter way to do this?
+  /// NOTE: what if UInt64 integer is provided?
+  /// We can't store this as an INTEGERLIST anymore
+  UInt64Matrix generatingMatrices;
+  generatingMatrices.reshape(numRows, numCols);
+  for (int row = 0; row < numRows; ++row)
+  {
+    for (int col = 0; col < numCols; ++col)
     {
-      if ( outputLevel >= DEBUG_OUTPUT )
-      {
-        if ( problem_db.get_bool("method.sobol") )
-        {
-          Cout << "Found default generating matrices 'sobol'." << std::endl;
-        }
-        else
-        {
-          Cout << "No generating matrices provided, using fall-back option "
-            << "'sobol'" << std::endl;
-        }
-      }
-
-      /// Need to make an explicit copy, can't get around that
-      size_t rows = 32;
-      size_t cols = 1024;
-      UInt64 predefined_matrices[cols*rows];
-      for ( size_t row = 0; row < cols; row++ )
-      {
-        for ( size_t col = 0; col < rows; col++ )
-        {
-          predefined_matrices[col*cols + row] = sobol_d1024_t32_m32[row][col];
-        }
-      }
-
-      return std::make_tuple(
-        UInt64Matrix(Teuchos::View, predefined_matrices, rows, rows, cols),
-        rows,
-        rows
-      );
+      generatingMatrices(row, col) = inlineMatrices(row, col);
     }
+  }
+
+  return std::make_tuple(
+    generatingMatrices,
+    problem_db.get_int("method.m_max"),
+    problem_db.get_int("method.t_max")
+  );
+}
+
+/// Case III: a set of default generating matrices has been selected
+const std::tuple<UInt64Matrix, int, int> DigitalNet::get_default_generating_matrices(
+  ProblemDescDB& problem_db
+)
+{
+  /// Select default generating matrices
+  if ( problem_db.get_bool("method.joe_kuo") )
+  {
+    if ( outputLevel >= DEBUG_OUTPUT )
+    {
+      Cout << "Found default generating matrices 'joe_kuo'." << std::endl;
+    }
+
+    return std::make_tuple(
+      UInt64Matrix(Teuchos::View, &joe_kuo_d250_t32_m32[0][0], 250, 250, 32),
+      32,
+      32
+    );
+  }
+  else
+  {
+    if ( outputLevel >= DEBUG_OUTPUT )
+    {
+      if ( problem_db.get_bool("method.sobol") )
+      {
+        Cout << "Found default generating matrices 'sobol'." << std::endl;
+      }
+      else
+      {
+        Cout << "No generating matrices provided, using fall-back option "
+          << "'sobol'" << std::endl;
+      }
+    }
+
+    return std::make_tuple(
+      UInt64Matrix(Teuchos::View, &sobol_d1024_t32_m32[0][0], 1024, 1024, 32),
+      32,
+      32
+    );
   }
 }
 
@@ -493,7 +507,7 @@ void DigitalNet::unsafe_get_points(
 
   /// Generate points between `nMin` and `nMax`
   double oneOnPow2tMax = std::ldexp(1, -tMax); /// 1 / 2^(-tMax)
-  for ( UInt32 k = nMin; k < nMax; ++k ) /// Loop over all points
+  for ( UInt64 k = nMin; k < nMax; ++k ) /// Loop over all points
   {
     next(k, current_point); /// Generate the next point as UInt64Vector
     auto idx = (this->*reorder)(k);
@@ -524,6 +538,7 @@ void DigitalNet::next(
   for ( size_t j = 0; j < current_point.length(); j++ ) // Loop over dimensions
   {
     current_point[j] ^= generatingMatrices[j][n]; // ^ is xor
+    current_point[j] ^= digitalShift[j]; // apply digital shift
   }
 }
 

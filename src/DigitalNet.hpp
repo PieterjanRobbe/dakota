@@ -131,6 +131,21 @@ private:
     ProblemDescDB& problem_db
   );
 
+  /// Case I: the generating matrices are provided in an external file
+  const std::tuple<UInt64Matrix, int, int> get_generating_matrices_from_file(
+    ProblemDescDB& problem_db
+  );
+
+  /// Case II: the generating matrices are provided in the input file
+  const std::tuple<UInt64Matrix, int, int> get_inline_generating_matrices(
+    ProblemDescDB& problem_db
+  );
+
+  /// Case III: a set of default generating matrices has been selected
+  const std::tuple<UInt64Matrix, int, int> get_default_generating_matrices(
+    ProblemDescDB& problem_db
+  );
+
   /// Apply digital shift to this digital net
   /// Uses the given seed to initialize the RNG
   /// When the seed is < 0, the random shift will be removed

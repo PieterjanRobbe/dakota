@@ -114,6 +114,21 @@ private:
     ProblemDescDB& problem_db
   );
 
+  /// Case I: the generating vector is provided in an external file
+  const std::tuple<UInt32Vector, int> get_generating_vector_from_file(
+    ProblemDescDB& problem_db
+  );
+
+  /// Case II: the generating vector is provided in the input file
+  const std::tuple<UInt32Vector, int> get_inline_generating_vector(
+    ProblemDescDB& problem_db
+  );
+
+  /// Case III: a default generating vector has been selected
+  const std::tuple<UInt32Vector, int> get_default_generating_vector(
+    ProblemDescDB& problem_db
+  );
+
   /// Apply random shift to this rank-1 lattice rule
   /// Uses the given seed to initialize the RNG
   /// When the seed is < 0, the random shift will be removed
