@@ -2315,6 +2315,7 @@ int ProblemDescDB::get_int(const String& entry_name) const
       {"symbols", P_MET numSymbols},
       {"m_max", P_MET log2MaxPoints},
       {"t_max", P_MET numberOfBits},
+      {"t_scramble", P_MET scrambleSize}
     },
     { /* model */
       {"active_subspace.bootstrap_samples", P_MOD numReplicates},

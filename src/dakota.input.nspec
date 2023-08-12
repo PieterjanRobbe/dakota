@@ -2736,6 +2736,7 @@ KEYWORD method {N_mdm3(start,0,stop)}
          ]
         [ m_max INTEGER >= 0 {N_mdm(int,log2MaxPoints)} ]
         [ t_max INTEGER >= 0 {N_mdm(int,numberOfBits)} ]
+        [ t_scramble INTEGER >= 0 {N_mdm(int,scrambleSize)} ]
         [ generating_matrices {0}
           inline INTEGERLIST {N_mdm(ivec,generatingMatrices)}
           |

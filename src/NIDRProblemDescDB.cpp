@@ -7013,7 +7013,8 @@ static int
 	MP_(totalPatternSize),
 	MP_(verifyLevel),
   MP_(log2MaxPoints),
-  MP_(numberOfBits);
+  MP_(numberOfBits),
+  MP_(scrambleSize);
 
 static size_t
 	MP_(collocationPoints),

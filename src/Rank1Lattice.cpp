@@ -19,6 +19,7 @@
 #include "LowDiscrepancySequence.hpp"
 #include "Rank1Lattice.hpp"
 #include "ld_data.hpp"
+#include "dakota_bit_utils.hpp"
 
 #include <boost/random/uniform_01.hpp>
 
@@ -26,12 +27,12 @@ namespace Dakota {
 
 /// Default constructor
 Rank1Lattice::Rank1Lattice(
-  const UInt32Vector& generatingVector,
-  int mMax,
-  bool randomShiftFlag,
-  int seedValue,
-  Rank1LatticeOrdering ordering,
-  short outputLevel
+  const UInt32Vector& generatingVector, /// Generating vector
+  int mMax,                             /// log2 of maximum number of points
+  bool randomShiftFlag,                 /// Use random shift if true
+  int seedValue,                        /// Random seed value
+  Rank1LatticeOrdering ordering,        /// Order of the lattice points
+  short outputLevel                     /// Verbosity
 ) :
 LowDiscrepancySequence(
   mMax,
@@ -86,26 +87,33 @@ ordering(ordering)
   ///
   /// Options for setting the ordering of this rank-1 lattice rule
   ///
+  if ( ordering == RANK_1_LATTICE_NATURAL_ORDERING )
+  {
+    reorder = &Rank1Lattice::reorder_natural;
+    scale = 1 / Real(1 << mMax);
+  }
+  else if ( ordering == RANK_1_LATTICE_RADICAL_INVERSE_ORDERING )
+  {
+    reorder = &Rank1Lattice::reorder_radical_inverse;
+    scale = 1 / Real(4294967296L); // 1 / 2^32
+  }
+  else
+  {
+    Cerr << "Unknown ordering (" << ordering << ") requested." << std::endl;
+    abort_handler(METHOD_ERROR);
+  }
 
-  /// Get the function pointer associated with the given ordering
-  switch ( ordering ) {
-    case RANK_1_LATTICE_NATURAL_ORDERING:
-      phi = &Rank1Lattice::natural;
-      if ( outputLevel >= DEBUG_OUTPUT )
-        Cout << "Using natural ordering of the lattice points" << std::endl;
-      break;
-    case RANK_1_LATTICE_RADICAL_INVERSE_ORDERING:
-      phi = &Rank1Lattice::radical_inverse;
-      if ( outputLevel >= DEBUG_OUTPUT )
-        Cout << "Using radical inverse ordering of the lattice points"
-          << std::endl;
-      break;
-    default:
-      phi = &Rank1Lattice::radical_inverse;
-      if ( outputLevel >= DEBUG_OUTPUT )
-        Cout << "No ordering provided, using fall-back option of "
-          << "radical inverse ordering" << std::endl;
-      break;
+  if ( outputLevel >= DEBUG_OUTPUT )
+  {
+    if ( ordering == RANK_1_LATTICE_NATURAL_ORDERING )
+    {
+      Cout << "Using natural ordering of the lattice points" << std::endl;
+    }
+    else
+    {
+      Cout << "Using radical inverse ordering of the lattice points" 
+        << std::endl;
+    }
   }
 }
 
@@ -162,8 +170,21 @@ Rank1Lattice::Rank1Lattice(
   ProblemDescDB& problem_db
 ) :
 Rank1Lattice(
-  get_generating_vector(problem_db),
-  get_m_max(problem_db),
+  get_data(problem_db),
+  problem_db
+)
+{
+
+}
+
+/// A constructor that takes a tuple and a problem description database
+Rank1Lattice::Rank1Lattice(
+  std::tuple<UInt32Vector, int> data,
+  ProblemDescDB& problem_db
+) :
+Rank1Lattice(
+  std::get<0>(data), /// Unpack generating vector
+  std::get<1>(data), /// Unpack log2 of maximum number of points
   !problem_db.get_bool("method.no_random_shift"),
   problem_db.get_int("method.random_seed"),
   problem_db.get_bool("method.ordering.natural") ? 
@@ -171,6 +192,12 @@ Rank1Lattice(
     RANK_1_LATTICE_RADICAL_INVERSE_ORDERING,
   problem_db.get_short("method.output")
 )
+{
+
+}
+
+/// Destructor
+Rank1Lattice::~Rank1Lattice()
 {
 
 }
@@ -200,7 +227,8 @@ void Rank1Lattice::check_mMax()
   }
 }
 
-/// Extract the generating vector from the given problem description database
+/// Extract the generating vector and log2 of the maximum number of points from
+/// the given problem description database
 /// There are 3 different ways to specify a generating vector:
 ///
 /// +-----------------------------------------+
@@ -221,7 +249,7 @@ void Rank1Lattice::check_mMax()
 /// Choose one of:
 ///  * cools_kuo_nuyens
 ///  * kuo
-const UInt32Vector Rank1Lattice::get_generating_vector(
+std::tuple<UInt32Vector, int> Rank1Lattice::get_data(
   ProblemDescDB& problem_db
 )
 {
@@ -233,35 +261,65 @@ const UInt32Vector Rank1Lattice::get_generating_vector(
     problem_db.get_iv("method.generating_vector.inline");
   size_t len = inlineVector.length();
 
+  ///
   /// Case I: the generating vector is provided in an external file
+  ///
   if ( !file.empty() )
   {
     if ( outputLevel >= DEBUG_OUTPUT )
+    {
       Cout << "Reading generating vector from file " << file << "..."
         << std::endl;
+    }
+
+    /// Read the generating vector from file
     std::ifstream io;
     TabularIO::open_file(io, file, "read_generating_vector");
     RealVectorArray z;
     read_unsized_data(io, z, false);
     size_t len = z[0].length();
     UInt32Vector generatingVector;
+
+    /// Populate the generating vector
     generatingVector.resize(len);
     for (size_t j=0; j<len; ++j)
+    {
       generatingVector[j] = UInt32(z[0][j]);
-    return generatingVector;
+    }
+
+    /// Return tuple
+    return std::make_tuple(
+      generatingVector,
+      problem_db.get_int("method.m_max")
+    );
   }
+  ///
   /// Case II: the generating vector is provided in the input file
+  ///
   else if ( len > 0 )
   {
     if ( outputLevel >= DEBUG_OUTPUT )
+    {
       Cout << "Reading inline generating vector..." << std::endl;
+    }
+
+    /// Populate the generating vector
     UInt32Vector generatingVector;
     generatingVector.resize(len);
     for (size_t j=0; j<len; ++j)
+    {
       generatingVector[j] = inlineVector[j];
-    return generatingVector;
+    }
+
+    /// Return tuple
+    return std::make_tuple(
+      generatingVector,
+      problem_db.get_int("method.m_max")
+    );
   }
+  ///
   /// Case III: a default generating vector has been selected
+  ///
   else
   {
     /// Verify that `mMax` has not been provided
@@ -277,61 +335,38 @@ const UInt32Vector Rank1Lattice::get_generating_vector(
     if ( problem_db.get_bool("method.kuo") )
     {
       if ( outputLevel >= DEBUG_OUTPUT )
+      {
         Cout << "Found default generating vector 'kuo'"
           << std::endl;
-      return UInt32Vector(Teuchos::View, kuo_d3600_m20, 3600);
+      }
+
+      return std::make_tuple(
+        UInt32Vector(Teuchos::View, kuo_d3600_m20, 3600),
+        20
+      );
     }
     else
     {
       if ( outputLevel >= DEBUG_OUTPUT )
       {
         if ( problem_db.get_bool("method.cools_kuo_nuyens") )
+        {
           Cout << "Found default generating vector 'cools_kuo_nuyens'"
             << std::endl;
+        }
         else
+        {
           Cout << "No generating vector provided, using fall-back option "
             << "'cools_kuo_nuyens'" << std::endl;
+        }
       }
-      return UInt32Vector(Teuchos::View, cools_kuo_nuyens_d250_m20, 250);
+
+      return std::make_tuple(
+        UInt32Vector(Teuchos::View, cools_kuo_nuyens_d250_m20, 250),
+        20
+      );
     }
   }
-
-  /// Return a reference to the generating vector
-  return generatingVector;
-}
-
-/// Extract the log2 of the maximum number of points from the given problem
-/// description database
-int Rank1Lattice::get_m_max(
-  ProblemDescDB& problem_db
-)
-{
-  /// Name of the file with the generating vector
-  String file = problem_db.get_string("method.generating_vector.file");
-
-  /// Get the inline generating vector
-  IntVector inlineVector = 
-    problem_db.get_iv("method.generating_vector.inline");
-  size_t len = inlineVector.length();
-
-  /// Same logic as for get_generating_vector
-  if ( !file.empty() || len > 0 )
-  {
-    return problem_db.get_int("method.m_max");
-  }
-  else
-  {
-    if ( problem_db.get_bool("method.kuo") )
-      return 20;
-    else
-      return 20;
-  }
-}
-
-/// Destructor
-Rank1Lattice::~Rank1Lattice()
-{
-
 }
 
 /// Randomize this low-discrepancy sequence
@@ -351,12 +386,19 @@ void Rank1Lattice::random_shift(
   // RealSymMatrix corr; // Uncorrelated random variables
   // lhsDriver.seed(seedValue);
   // lhsDriver.generate_uniform_samples(lower, upper, corr, 1, randomShift);
-  boost::random::mt19937 rng(std::max(0, seed));
-  boost::uniform_01<boost::mt19937> sampler(rng);
   randomShift.resize(dMax);
-  for (size_t j=0; j < dMax; ++j)
+  if ( seed < 0 )
   {
-    randomShift[j] = seed < 0 ? 0 : sampler();
+    randomShift = 0; /// Sets all entries to 0
+  }
+  else
+  {
+    boost::random::mt19937 rng(seed);
+    boost::uniform_01<boost::mt19937> sampler(rng);
+    for (size_t j = 0; j < dMax; ++j)
+    {
+      randomShift[j] = sampler();
+    }
   }
 }
 
@@ -371,37 +413,31 @@ void Rank1Lattice::unsafe_get_points(
   RealMatrix& points
 )
 {
-  for ( UInt32 k=nMin; k<nMax; ++k )
+  for ( UInt32 k = nMin; k < nMax; ++k ) /// Loop over all points
   {
-    Real phik = (this->*phi)(k);
-    for ( int j=0; j<points.numRows(); ++j )
+    Real phik = (this->*reorder)(k) * scale; /// phi(k)
+    for ( int j = 0; j < points.numRows(); ++j ) /// Loop over all dimensions
     {
       Real point = phik * generatingVector[j] + randomShift[j];
-      points[k - nMin][j] = point - std::floor(point);
+      points[k - nMin][j] = point - std::floor(point); /// Map to [0, 1)
     }
   }
 }
 
-/// For use with the RANK_1_LATTICE_NATURAL_ORDERING of the points
-Real Rank1Lattice::natural(
+/// Position of the `k`th lattice point in RANK_1_LATTICE_NATURAL_ORDERING
+inline UInt32 Rank1Lattice::reorder_natural(
   UInt32 k
 )
 {
-  return k / Real(1 << mMax);
+  return k;
 }
 
-/// For use with the RANK_1_LATTICE_RADICAL_INVERSE_ORDERING of the points
-Real Rank1Lattice::radical_inverse(
+/// Position of the `k`th lattice point in RANK_1_LATTICE_RADICAL_INVERSE_ORDERING
+inline UInt32 Rank1Lattice::reorder_radical_inverse(
   UInt32 k
 )
 {
-  UInt32 v = k;
-  v = ((v >> 1) & 0x55555555) | ((v & 0x55555555) << 1);
-  v = ((v >> 2) & 0x33333333) | ((v & 0x33333333) << 2);
-  v = ((v >> 4) & 0x0F0F0F0F) | ((v & 0x0F0F0F0F) << 4);
-  v = ((v >> 8) & 0x00FF00FF) | ((v & 0x00FF00FF) << 8);
-  v = ( v >> 16             ) | ( v               << 16);
-  return v / Real(4294967296L);
+  return bitreverse(k);
 }
 
 } // namespace Dakota

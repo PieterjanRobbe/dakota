@@ -35,15 +35,16 @@ public:
 
   /// Default constructor
   DigitalNet(
-    const UInt64Matrix& generatingMatrices,
-    int mMax,
-    int tMax,
-    bool digitalShiftFlag,
-    bool scramblingFlag,
-    int seedValue,
-    DigitalNetOrdering order,
-    bool mostSignificantBit,
-    short outputLevel
+    const UInt64Matrix& generatingMatrices, /// Generating matrices
+    int mMax,                               /// log2 of maximum number of points
+    int tMax,                               /// Number of bits of integers in the generating matrices
+    int tScramble,                          /// Number of rows in the linear scramble matrix
+    bool digitalShiftFlag,                  /// Use digital shift if true
+    bool scramblingFlag,                    /// Use linear matrix scramble if true
+    int seedValue,                          /// Random seed value
+    DigitalNetOrdering order,               /// Order of the digital net points
+    bool mostSignificantBit,                /// Generating matrices are stored with most significant bit first if true
+    short outputLevel                       /// Verbosity
   );
 
   /// A constructor that uses gray code ordering and a digital shift with linear
@@ -64,6 +65,16 @@ public:
 
   /// A constructor that takes a problem description database
   DigitalNet(
+    ProblemDescDB& problem_db
+  );
+
+  /// A constructor that takes a tuple and a problem description database
+  /// The tuple contains the generating matrices, corresponding log2 of the
+  /// maximum number of points, number of bits in each integer of the
+  /// generating matrices, and the number of rows in the linear scramble
+  /// matrix
+  DigitalNet(
+    std::tuple<UInt64Matrix, int, int, int> data,
     ProblemDescDB& problem_db
   );
 
@@ -95,6 +106,9 @@ private:
   /// Also: number of rows in each generating matrix
   int tMax;
 
+  /// Number of rows in the linear scramble matrix
+  int tScramble;
+
   /// Digitally shift this digital net if true
   bool digitalShiftFlag;
 
@@ -110,28 +124,10 @@ private:
   /// Most significant bit comes first in generatingMatrices when true
   bool mostSignificantBit;
 
-  /// Generates digital net points without error checking
-  void unsafe_get_points(
-    const size_t nMin,
-    const size_t nMax,
-    RealMatrix& points
-  );
-
-  /// Extract the generating matrices from the given problem description 
-  /// database
-  const UInt64Matrix get_generating_matrices(
-    ProblemDescDB& problem_db
-  );
-
-  /// Extract the log2 of the maximum number of points from the given
-  /// problem description database
-  int get_m_max(
-    ProblemDescDB& problem_db
-  );
-
-  /// Extract the number of bits in each integer in the generating matrices 
-  /// from the given problem description database
-  int get_t_max(
+  /// Extract the generating matrices, corresponding log2 of the maximum number
+  /// of points, number of bits in each integer of the generating matrices, and 
+  /// the number of rows in the linear scramble matrix from the given problem 
+  std::tuple<UInt64Matrix, int, int, int> get_data(
     ProblemDescDB& problem_db
   );
 
@@ -147,20 +143,32 @@ private:
     bool apply
   );
 
-  /// For use with the DIGITAL_NET_NATURAL_ORDERING of the points
-  Real natural(
-    UInt32 k
+  /// Generates digital net points without error checking
+  void unsafe_get_points(
+    const size_t nMin,
+    const size_t nMax,
+    RealMatrix& points
   );
 
-  /// For use with the DIGITAL_NET_GRAY_CODE_ORDERING of the points
-  Real gray_code(
-    UInt32 k
+  /// Get the next point of the sequence represented as an unsigned integer
+  /// vector
+  void next(
+    int n,
+    UInt64Vector& current_point
   );
 
-  /// Function pointer to the chosen ordering of the points
-  Real (DigitalNet::*phi)(
-    UInt32
+  /// Position of the `k`th digital net point in DIGITAL_NET_NATURAL_ORDERING
+  inline UInt64 reorder_natural(
+    UInt64 k
   );
+
+  /// Position of the `k`th digital net point in DIGITAL_NET_GRAY_CODE_ORDERING
+  inline UInt64 reorder_gray_code(
+    UInt64 k
+  );
+
+  /// Function pointer to the chosen order of the points
+  UInt64 (DigitalNet::*reorder)(UInt64);
 
 };
 

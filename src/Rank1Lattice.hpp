@@ -35,12 +35,12 @@ public:
 
   /// Default constructor
   Rank1Lattice(
-    const UInt32Vector& generatingVector,
-    int mMax,
-    bool randomShiftFlag,
-    int seedValue,
-    Rank1LatticeOrdering ordering,
-    short outputLevel
+    const UInt32Vector& generatingVector, /// Generating vector
+    int mMax,                             /// log2 of maximum number of points
+    bool randomShiftFlag,                 /// Use random shift if true
+    int seedValue,                        /// Random seed value
+    Rank1LatticeOrdering ordering,        /// Order of the lattice points
+    short outputLevel                     /// Verbosity
   );
 
   /// A constructor that uses radical inverse ordering and a random shift
@@ -59,6 +59,14 @@ public:
 
   /// A constructor that takes a problem description database
   Rank1Lattice(
+    ProblemDescDB& problem_db
+  );
+
+  /// A constructor that takes a tuple and a problem description database
+  /// The tuple contains the generating vector and corresponding log2 of the
+  /// maximum number of points
+  Rank1Lattice(
+    std::tuple<UInt32Vector, int> data,
     ProblemDescDB& problem_db
   );
 
@@ -89,6 +97,9 @@ private:
   /// Order of the points of this rank-1 lattice rule
   Rank1LatticeOrdering ordering;
 
+  /// Scale factor for rank-1 lattice points
+  Real scale;
+
   /// Perform checks on dMax
   /// Checks if dMax is positive (> 0)
   void check_dMax();
@@ -97,14 +108,9 @@ private:
   /// Checks if mMax is positive (> 0)
   void check_mMax();
 
-  /// Extract the generating vector from the given problem description database
-  const UInt32Vector get_generating_vector(
-    ProblemDescDB& problem_db
-  );
-
-  /// Extract the log2 of the maximum number of points from the given problem
-  /// description database
-  int get_m_max(
+  /// Extract the generating vector and log2 of the maximum number of points
+  /// from the given problem description database
+  std::tuple<UInt32Vector, int> get_data(
     ProblemDescDB& problem_db
   );
 
@@ -122,20 +128,18 @@ private:
     RealMatrix& points
   );
 
-  /// For use with the RANK_1_LATTICE_NATURAL_ORDERING of the points
-  Real natural(
+  /// Position of the `k`th lattice point in RANK_1_LATTICE_NATURAL_ORDERING
+  inline UInt32 reorder_natural(
     UInt32 k
   );
 
-  /// For use with the RANK_1_LATTICE_RADICAL_INVERSE_ORDERING of the points
-  Real radical_inverse(
+  /// Position of the `k`th lattice point in RANK_1_LATTICE_RADICAL_INVERSE_ORDERING
+  inline UInt32 reorder_radical_inverse(
     UInt32 k
   );
 
   /// Function pointer to the chosen order of the points
-  Real (Rank1Lattice::*phi)(
-    UInt32
-  );
+  UInt32 (Rank1Lattice::*reorder)(UInt32);
 
 };
 

@@ -59,6 +59,7 @@ typedef Teuchos::SerialSymDenseMatrix<int, Real>   RealSymMatrix;
 typedef Teuchos::SerialDenseVector<int, int>       IntVector;
 typedef Teuchos::SerialDenseVector<int, UInt32>    UInt32Vector;
 typedef Teuchos::SerialDenseMatrix<int, int>       IntMatrix;
+typedef Teuchos::SerialDenseVector<int, UInt64>    UInt64Vector;
 typedef Teuchos::SerialDenseMatrix<int, UInt64>    UInt64Matrix;
 typedef Teuchos::SerialDenseVector<int, size_t>    SizetVector;
 typedef Teuchos::SerialSymDenseMatrix<int, size_t> SizetSymMatrix;

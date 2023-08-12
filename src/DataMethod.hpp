@@ -910,6 +910,8 @@ public:
   bool leastSignificantBitFirst;
   /// Number of bits in each integer in the generating matrices
   int numberOfBits;
+  /// Number of rows in the linear scramble matrix
+  int scrambleSize;
   /// Inline generating matrices of the digital net
   IntMatrix generatingMatrices;
   /// Name of file with generating matrices

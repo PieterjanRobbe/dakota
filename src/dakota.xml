@@ -3041,6 +3041,9 @@
         <keyword id="t_max" name="t_max" code="{N_mdm(int,numberOfBits)}" label="t_max" minOccurs="0" default="0">
           <param type="INTEGER" constraint=">= 0" />
         </keyword>
+        <keyword id="t_scramble" name="t_scramble" code="{N_mdm(int,scrambleSize)}" label="t_scramble" minOccurs="0" default="0">
+          <param type="INTEGER" constraint=">= 0" />
+        </keyword>
         <keyword id="generating_matrices" name="generating_matrices" code="{0}" label="Generating matrices" minOccurs="0" default="No generating matrices">
           <oneOf label="Generating Matrices"> 
             <keyword id="inline" name="inline" code="{N_mdm(ivec,generatingMatrices)}" label="Inline generating matrices" >
