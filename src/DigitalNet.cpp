@@ -13,12 +13,20 @@
 //- Checked by:
 //- Version:
 
+/// TODO:
+/// - make current version
+/// - add a lot of tests
+/// - implement scrambling
+/// - make slides
+
 #include "dakota_data_types.hpp"
 #include "dakota_tabular_io.hpp"
 #include "LowDiscrepancySequence.hpp"
 #include "DigitalNet.hpp"
 #include "ld_data.hpp"
 #include "dakota_bit_utils.hpp"
+
+#include <boost/random/uniform_int.hpp>
 
 namespace Dakota {
 
@@ -31,7 +39,7 @@ DigitalNet::DigitalNet(
   bool digitalShiftFlag,                  /// Use digital shift if true
   bool scramblingFlag,                    /// Use linear matrix scramble if true
   int seedValue,                          /// Random seed value
-  DigitalNetOrdering order,               /// Order of the digital net points
+  DigitalNetOrdering ordering,            /// Order of the digital net points
   bool mostSignificantBit,                /// Generating matrices are stored with most significant bit first if true
   short outputLevel                       /// Verbosity
 ) :
@@ -43,11 +51,101 @@ LowDiscrepancySequence(
 ),
 generatingMatrices(generatingMatrices),
 tMax(tMax),
+tScramble(tScramble),
 digitalShiftFlag(digitalShiftFlag),
 scramblingFlag(scramblingFlag),
 ordering(ordering),
 mostSignificantBit(mostSignificantBit)
 {
+  /// Print summary info when debugging
+  if ( outputLevel >= DEBUG_OUTPUT )
+  {
+    Cout << "The maximum dimension of this digital net is "
+      << dMax << "." << std::endl;
+    Cout << "The log2 of the maximum number of points of this digital "
+      << "net is " << mMax << "." << std::endl;
+    Cout << "The number of bits of the integers in the generating matrices "
+      << "is " << tMax << "." << std::endl;
+    Cout << "The number of rows in the linear scramble matrix is "
+      << tScramble << "." << std::endl;
+    Cout << "The value of the random seed is " << seedValue << "."
+      << std::endl;
+    Cout << "Assuming generating matrix is stored with "
+      << ( mostSignificantBit ? "most" : "least" ) << " significant bit first."
+      << std::endl;
+    Cout << "Found generating matrices: " << std::endl;
+    for (size_t row = 0; row < generatingMatrices.numRows(); row++)
+    {
+      for (size_t col = 0; col < generatingMatrices.numCols(); col++)
+      {
+        Cout << generatingMatrices[col][row] << " ";
+      }
+      Cout << std::endl;
+    }
+    Cout << std::endl;
+  }
+
+  ///
+  /// Options for setting the digital shift of this digital net
+  ///
+  digital_shift(digitalShiftFlag ? seedValue : -1);
+
+  if ( digitalShiftFlag )
+  {
+    /// Print digital shift vector when debugging
+    if ( outputLevel >= DEBUG_OUTPUT )
+    {
+      Cout << "Using digital shift ";
+      for (size_t j = 0; j < dMax; j++)
+        Cout << digitalShift[j] << " ";
+      Cout << std::endl;
+    }
+  }
+  else
+  {
+    /// Print warning about missing digital shift (will include the 0 point)
+    if ( outputLevel >= VERBOSE_OUTPUT )
+    {
+      Cout << "WARNING: This digital net will not be randomized, samples "
+        << "will include zeros as the first point!" << std::endl;
+    }
+  }
+
+  ///
+  /// Options for setting the scrmbling of this digital net
+  ///
+  /// TODO: implement this
+  /// TODO: check if `tMax` <= `tScramble` <= 64
+
+  ///
+  /// Options for setting the ordering of this digital net
+  ///
+  if ( ordering == DIGITAL_NET_NATURAL_ORDERING )
+  {
+    reorder = &DigitalNet::reorder_natural;
+  }
+  else if ( ordering == DIGITAL_NET_GRAY_CODE_ORDERING )
+  {
+    reorder = &DigitalNet::reorder_gray_code;
+  }
+  else
+  {
+    Cerr << "Unknown ordering (" << ordering << ") requested." << std::endl;
+    abort_handler(METHOD_ERROR);
+  }
+
+  if ( outputLevel >= DEBUG_OUTPUT )
+  {
+    if ( ordering == DIGITAL_NET_NATURAL_ORDERING )
+    {
+      Cout << "Using natural ordering of the digital net points" << std::endl;
+    }
+    else
+    {
+      Cout << "Using radical inverse ordering of the digital net points" 
+        << std::endl;
+    }
+  }
   
 }
 
@@ -127,14 +225,14 @@ DigitalNet(
 
 /// A constructor that takes a tuple and a problem description database
 DigitalNet::DigitalNet(
-  std::tuple<UInt64Matrix, int, int, int> data,
+  std::tuple<UInt64Matrix, int, int> data,
   ProblemDescDB& problem_db
 ) :
 DigitalNet(
   std::get<0>(data),
   std::get<1>(data),
   std::get<2>(data),
-  std::get<3>(data),
+  problem_db.get_int("method.t_scramble"),
   !problem_db.get_bool("method.no_digital_shift"),
   !problem_db.get_bool("method.no_scramble"),
   problem_db.get_int("method.random_seed"),
@@ -160,40 +258,211 @@ DigitalNet::~DigitalNet()
 /// description database
 /// There are 3 different ways to specify generating matrices:
 ///
-/// +-----------------------------------------+
-/// | Case I:  "generating_matrices file [...]" |
-/// +-----------------------------------------+
+/// +--------------------------------------------------+
+/// | Case I:   "generating_matrices file [...]"       |
+/// +--------------------------------------------------+
 /// The generating matrices will be read from the file with the given name
 ///
-/// +-------------------------------------------+
-/// | Case II: "generating_matrices inline [...]" |
-/// +-------------------------------------------+
+/// +--------------------------------------------------+
+/// | Case II:  "generating_matrices inline [...]"     |
+/// +--------------------------------------------------+
 /// Assumes the generating matrices is given as an inline matrix of
 /// integers
 ///
 /// +--------------------------------------------------+
-/// | Case III:   "generating_matrices predefined [...]" |
+/// | Case III: "generating_matrices predefined [...]" |
 /// +--------------------------------------------------+
 /// The given name should match the name of a predefined set of generating 
 /// matrices
 /// Choose one of:
 ///  * joe_kuo
 ///  * sobol
-std::tuple<UInt64Matrix, int, int, int> DigitalNet::get_data(
+std::tuple<UInt64Matrix, int, int> DigitalNet::get_data(
   ProblemDescDB& problem_db
 )
 {
-  
+  /// Name of the file with the generating matrices
+  String file = problem_db.get_string("method.generating_matrices.file");
+
+  /// Get the inline generating matrices
+  IntMatrix inlineMatrices = 
+    problem_db.get_im("method.generating_matrices.inline");
+  size_t rows = inlineMatrices.numRows();
+  size_t cols = inlineMatrices.numCols();
+
+  ///
+  /// Case I: the generating matrices are provided in an external file
+  ///
+  if ( !file.empty() )
+  {
+    if ( outputLevel >= DEBUG_OUTPUT )
+    {
+      Cout << "Reading generating matrices from file " << file << "..."
+        << std::endl;
+    }
+
+    /// Read the generating vector from file
+    std::ifstream io;
+    TabularIO::open_file(io, file, "read_generating_matrices");
+    RealVectorArray C;
+    read_unsized_data(io, C, false);
+    size_t numCols = C.size();
+    size_t numRows = C[0].length();
+    UInt64Matrix generatingMatrices;
+
+    /// Populate the generating vector
+    generatingMatrices.reshape(numRows, numCols);
+    for (size_t col = 0; col < numCols; col++)
+    {
+      for (size_t row = 0; row < numRows; row++)
+      {
+        generatingMatrices[col][row] = UInt64(C[col][row]);
+      }
+    }
+
+    /// Return tuple
+    return std::make_tuple(
+      generatingMatrices,
+      problem_db.get_int("method.m_max"),
+      problem_db.get_int("method.t_max")
+    );
+  }
+
+  ///
+  /// Case II: the generating matrices are provided in the input file
+  ///
+  else if ( cols > 0 )
+  {
+    if ( outputLevel >= DEBUG_OUTPUT )
+    {
+      Cout << "Reading inline generating matrices..." << std::endl;
+    }
+
+    /// Populate the generating matrices
+    UInt64Matrix generatingMatrices;
+    generatingMatrices.reshape(rows, cols);
+    for (size_t col = 0; col < cols; col++)
+    {
+      for (size_t row = 0; row < rows; row++)
+      {
+        generatingMatrices[col][row] = inlineMatrices[col][row];
+      }
+    }
+
+    /// Return tuple
+    return std::make_tuple(
+      generatingMatrices,
+      problem_db.get_int("method.m_max"),
+      problem_db.get_int("method.t_max")
+    );
+  }
+
+  ///
+  /// Case III: default generating matrices have been selected
+  ///
+  else
+  {
+    /// Verify that `mMax` has not been provided
+    if ( problem_db.get_int("method.m_max") )
+    {
+      Cerr << "\nError: you can't specify default generating matrices and "
+        << "the log2 of the maximum number of points 'm_max' at the same "
+        << "time." << std::endl;
+      abort_handler(METHOD_ERROR);
+    }
+
+    /// Verify that `tMax` has not been provided
+    if ( problem_db.get_int("method.t_max") )
+    {
+      Cerr << "\nError: you can't specify default generating matrices and "
+        << "the number of bits of the integers in the generating matrices "
+        << "'t_max' at the same time." << std::endl;
+      abort_handler(METHOD_ERROR);
+    }
+
+    /// Select default generating matrices
+    if ( problem_db.get_bool("method.joe_kuo") )
+    {
+      if ( outputLevel >= DEBUG_OUTPUT )
+      {
+        Cout << "Found default generating matrices 'joe_kuo'." << std::endl;
+      }
+
+      /// Need to make an explicit copy, can't get around that
+      size_t rows = 32;
+      size_t cols = 250;
+      UInt64 predefined_matrices[cols*rows];
+      for ( size_t row = 0; row < cols; row++ )
+      {
+        for ( size_t col = 0; col < rows; col++ )
+        {
+          predefined_matrices[col*cols + row] = joe_kuo_d250_t32_m32[row][col];
+        }
+      }
+
+      return std::make_tuple(
+        UInt64Matrix(Teuchos::View, predefined_matrices, rows, rows, cols),
+        rows,
+        rows
+      );
+    }
+    else
+    {
+      if ( outputLevel >= DEBUG_OUTPUT )
+      {
+        if ( problem_db.get_bool("method.sobol") )
+        {
+          Cout << "Found default generating matrices 'sobol'." << std::endl;
+        }
+        else
+        {
+          Cout << "No generating matrices provided, using fall-back option "
+            << "'sobol'" << std::endl;
+        }
+      }
+
+      /// Need to make an explicit copy, can't get around that
+      size_t rows = 32;
+      size_t cols = 1024;
+      UInt64 predefined_matrices[cols*rows];
+      for ( size_t row = 0; row < cols; row++ )
+      {
+        for ( size_t col = 0; col < rows; col++ )
+        {
+          predefined_matrices[col*cols + row] = sobol_d1024_t32_m32[row][col];
+        }
+      }
+
+      return std::make_tuple(
+        UInt64Matrix(Teuchos::View, predefined_matrices, rows, rows, cols),
+        rows,
+        rows
+      );
+    }
+  }
 }
 
 /// Apply digital shift to this digital net
 /// Uses the given seed to initialize the RNG
-/// When the seed is < 0, the random shift will be removed
+/// When the seed is < 0, the digital shift will be removed
 void DigitalNet::digital_shift(
   int seed
 )
 {
-
+  digitalShift.resize(dMax);
+  if ( seed < 0 )
+  {
+    digitalShift = 0; /// Sets all entries to 0
+  }
+  else
+  {
+    boost::random::mt19937 rng(seed);
+    boost::random::uniform_int_distribution<uint64_t> sampler;
+    for (size_t j = 0; j < dMax; ++j)
+    {
+      digitalShift[j] = sampler(rng);
+    }
+  }
 }
 
 /// Toggle linear matrix scrambling of this digital net
@@ -201,7 +470,7 @@ void DigitalNet::scramble(
   bool apply
 )
 {
-
+  /// TODO: implement this
 }
 
 /// Generates digital net points without error checking

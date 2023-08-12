@@ -42,7 +42,7 @@ public:
     bool digitalShiftFlag,                  /// Use digital shift if true
     bool scramblingFlag,                    /// Use linear matrix scramble if true
     int seedValue,                          /// Random seed value
-    DigitalNetOrdering order,               /// Order of the digital net points
+    DigitalNetOrdering ordering,            /// Order of the digital net points
     bool mostSignificantBit,                /// Generating matrices are stored with most significant bit first if true
     short outputLevel                       /// Verbosity
   );
@@ -74,7 +74,7 @@ public:
   /// generating matrices, and the number of rows in the linear scramble
   /// matrix
   DigitalNet(
-    std::tuple<UInt64Matrix, int, int, int> data,
+    std::tuple<UInt64Matrix, int, int> data,
     ProblemDescDB& problem_db
   );
 
@@ -116,7 +116,7 @@ private:
   bool scramblingFlag;
 
   /// Digital shift associated with this digital net
-  RealVector digitalShift;
+  UInt64Vector digitalShift;
 
   /// Order of the points of this digital net
   DigitalNetOrdering ordering;
@@ -127,7 +127,7 @@ private:
   /// Extract the generating matrices, corresponding log2 of the maximum number
   /// of points, number of bits in each integer of the generating matrices, and 
   /// the number of rows in the linear scramble matrix from the given problem 
-  std::tuple<UInt64Matrix, int, int, int> get_data(
+  std::tuple<UInt64Matrix, int, int> get_data(
     ProblemDescDB& problem_db
   );
 

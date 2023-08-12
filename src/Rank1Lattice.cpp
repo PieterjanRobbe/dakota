@@ -48,10 +48,11 @@ ordering(ordering)
   if ( outputLevel >= DEBUG_OUTPUT )
   {
     Cout << "The maximum dimension of this rank-1 lattice rule is "
-      << dMax << std::endl;
+      << dMax << "." << std::endl;
     Cout << "The log2 of the maximum number of points of this rank-1 "
-      << "lattice rule is " << mMax << std::endl;
-    Cout << "The value of the random seed is " << seedValue << std::endl;
+      << "lattice rule is " << mMax << "." << std::endl;
+    Cout << "The value of the random seed is " << seedValue << "."
+      << std::endl;
     Cout << "Found generating vector ";
     for (size_t j=0; j < generatingVector.length(); ++j)
       Cout << generatingVector[j] << " ";
@@ -231,14 +232,14 @@ void Rank1Lattice::check_mMax()
 /// the given problem description database
 /// There are 3 different ways to specify a generating vector:
 ///
-/// +-----------------------------------------+
-/// | Case I:  "generating_vector file [...]" |
-/// +-----------------------------------------+
+/// +--------------------------------------------------+
+/// | Case I:  "generating_vector file [...]"          |
+/// +--------------------------------------------------+
 /// The generating vector will be read from the file with the given name
 ///
-/// +-------------------------------------------+
-/// | Case II: "generating_vector inline [...]" |
-/// +-------------------------------------------+
+/// +--------------------------------------------------+
+/// | Case II: "generating_vector inline [...]"        |
+/// +--------------------------------------------------+
 /// Assumes the generating vector is given as an inline sequence of
 /// integers
 ///
