@@ -14,7 +14,7 @@
 //- Version:
 
 #include "dakota_data_types.hpp"
-#include "ld_data.hpp"
+#include "low_discrepancy_data.hpp"
 
 namespace Dakota {
 

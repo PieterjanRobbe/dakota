@@ -73,7 +73,9 @@ ordering(ordering)
     {
       Cout << "Using random shift ";
       for (size_t j=0; j < dMax; ++j)
+      {
         Cout << randomShift[j] << " ";
+      }
       Cout << std::endl;
     }
   }

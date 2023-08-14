@@ -11,7 +11,7 @@
 
 #include "LowDiscrepancySequence.hpp"
 #include "Rank1Lattice.hpp"
-#include "ld_data.hpp"
+#include "low_discrepancy_data.hpp"
 
 #include <fstream>
 #include <cmath>

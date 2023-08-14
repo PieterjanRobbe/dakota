@@ -79,7 +79,7 @@ mostSignificantBit(mostSignificantBit)
     {
       for (size_t col = 0; col < generatingMatrices.numCols(); col++)
       {
-        Cout << generatingMatrices[col][row] << " ";
+        Cout << generatingMatrices(row, col) << " ";
       }
       Cout << std::endl;
     }
@@ -98,7 +98,9 @@ mostSignificantBit(mostSignificantBit)
     {
       Cout << "Using digital shift ";
       for (size_t j = 0; j < dMax; j++)
+      {
         Cout << digitalShift[j] << " ";
+      }
       Cout << std::endl;
     }
   }
@@ -509,6 +511,7 @@ void DigitalNet::unsafe_get_points(
 
   /// Generate points between `nMin` and `nMax`
   double oneOnPow2tMax = std::ldexp(1, -tMax); /// 1 / 2^(-tMax)
+  // double oneOnPow2tMax = 1 / Real(UInt64(1) << 63) / 2; /// 1 / 2^(-tMax)
   for ( UInt64 k = nMin; k < nMax; ++k ) /// Loop over all points
   {
     next(k, current_point); /// Generate the next point as UInt64Vector
