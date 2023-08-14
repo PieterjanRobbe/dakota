@@ -13,8 +13,8 @@
 //- Checked by:
 //- Version:
 
-#ifndef LD_DATA_H
-#define LD_DATA_H
+#ifndef LOW_DISCREPANCY_DATA_H
+#define LOW_DISCREPANCY_DATA_H
 
 #include "dakota_data_types.hpp"
 

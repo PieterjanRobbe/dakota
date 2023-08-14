@@ -18,7 +18,7 @@
 #include "dakota_tabular_io.hpp"
 #include "LowDiscrepancySequence.hpp"
 #include "Rank1Lattice.hpp"
-#include "ld_data.hpp"
+#include "low_discrepancy_data.hpp"
 #include "dakota_bit_utils.hpp"
 
 #include <boost/random/uniform_01.hpp>
