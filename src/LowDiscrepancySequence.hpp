@@ -229,39 +229,6 @@ protected:
     }
   }
 
-  /// Count number of rows in given file
-  int count_rows(
-    String file_name
-  )
-  {
-    int nbOfLines = 0;
-    std::ifstream file(file_name);
-    String line;
-    while (std::getline(file, line))
-    {
-      ++nbOfLines;
-    }
-    return nbOfLines;
-  }
-
-  /// Count number of columns in given file
-  int count_columns(
-    String file_name
-  )
-  {
-    int nbOfColumns = 0;
-    std::ifstream file(file_name);
-    String line;
-    std::getline(file, line);
-    std::stringstream stream(line);
-    String word;
-    while ( stream >> word )
-    {
-      ++nbOfColumns;
-    }
-    return nbOfColumns;
-  }
-
   /// Generate points from this low-discrepancy sequence
   virtual void unsafe_get_points(
       const size_t nMin,

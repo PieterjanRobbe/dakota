@@ -18,12 +18,14 @@
 /// - implement scrambling
 /// - make slides
 
+#include "dakota_bit_utils.hpp"
+#include "dakota_data_io.hpp"
 #include "dakota_data_types.hpp"
 #include "dakota_tabular_io.hpp"
-#include "LowDiscrepancySequence.hpp"
-#include "DigitalNet.hpp"
 #include "low_discrepancy_data.hpp"
-#include "dakota_bit_utils.hpp"
+
+#include "DigitalNet.hpp"
+#include "LowDiscrepancySequence.hpp"
 
 #include <boost/random/uniform_int.hpp>
 

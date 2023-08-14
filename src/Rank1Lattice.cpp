@@ -13,13 +13,15 @@
 //- Checked by:
 //- Version:
 
+#include "dakota_bit_utils.hpp"
+#include "dakota_data_io.hpp"
 #include "dakota_data_types.hpp"
 #include "dakota_mersenne_twister.hpp"
 #include "dakota_tabular_io.hpp"
+#include "low_discrepancy_data.hpp"
+
 #include "LowDiscrepancySequence.hpp"
 #include "Rank1Lattice.hpp"
-#include "low_discrepancy_data.hpp"
-#include "dakota_bit_utils.hpp"
 
 #include <boost/random/uniform_01.hpp>
 
