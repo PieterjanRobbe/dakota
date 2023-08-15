@@ -83,7 +83,7 @@ ordering(ordering)
   else
   {
     /// Print warning about missing random shift (will include the 0 point)
-    if ( outputLevel >= VERBOSE_OUTPUT )
+    if ( outputLevel >= QUIET_OUTPUT )
     {
       Cout << "WARNING: This lattice rule will not be randomized, samples "
         << "will include zeros as the first point!" << std::endl;

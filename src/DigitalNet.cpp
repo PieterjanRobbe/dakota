@@ -24,6 +24,44 @@
 
 #include <boost/random/uniform_int.hpp>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <bitset>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 namespace Dakota {
 
 /// Default constructor
@@ -104,7 +142,7 @@ mostSignificantBitFirst(mostSignificantBitFirst)
   else
   {
     /// Print warning about missing digital shift (will include the 0 point)
-    if ( outputLevel >= VERBOSE_OUTPUT )
+    if ( outputLevel >= QUIET_OUTPUT )
     {
       Cout << "WARNING: This digital net will not be randomized, samples "
         << "will include zeros as the first point!" << std::endl;
@@ -112,43 +150,26 @@ mostSignificantBitFirst(mostSignificantBitFirst)
   }
 
   ///
-  /// Reverse bits in generating matrices if needed
-  ///
-  if ( mostSignificantBitFirst )
-  {
-    auto numRows = generatingMatrices.numRows();
-    auto numCols = generatingMatrices.numCols();
-    for (size_t row = 0; row < numRows; row++)
-    {
-      for (size_t col = 0; col < numCols; col++)
-      {
-        this->generatingMatrices(row, col) = 
-          bitreverse(this->generatingMatrices(row, col));
-
-      }
-    }
-
-    if ( outputLevel >= VERBOSE_OUTPUT )
-    {
-      Cout << "Generating matrices with least significant bit first:"
-        << std::endl;
-      for (size_t row = 0; row < numRows; row++)
-      {
-        for (size_t col = 0; col < numCols; col++)
-        {
-          Cout << this->generatingMatrices(row, col) << " ";
-        }
-        Cout << std::endl;
-      }
-    }
-  }
-
-  ///
   /// Options for setting the scrambling of this digital net
   ///
-  /// TODO: implement this
-  /// TODO: check if `tMax` <= `tScramble` <= 64
-  /// TODO: definitely check that tMax <= 64 as well!
+  scramble(scramblingFlag ? seedValue : -1);
+
+  if ( tScramble < tMax )
+  {
+    Cerr << "Error: number of rows of the scramble matrices 't_scramble' must "
+      << "be greater than or equal to the number of bits in the representation "
+      << "of the integers in the generating matrices 't_max', got "
+      << tScramble << " < " << tMax << std::endl;
+      abort_handler(METHOD_ERROR);
+  }
+  if ( scramblingFlag )
+  {
+    if ( outputLevel >= DEBUG_OUTPUT )
+    {
+      Cout << "Scrambling generating matrices with scramble matrices "
+        << "of shape " << tScramble << " x " << tMax << std::endl;
+    }
+  }
 
   ///
   /// Options for setting the ordering of this digital net
@@ -177,6 +198,39 @@ mostSignificantBitFirst(mostSignificantBitFirst)
     {
       Cout << "Using gray code ordering of the digital net points" 
         << std::endl;
+    }
+  }
+
+  ///
+  /// Reverse bits in (scrambled) generating matrices if needed
+  ///
+  if ( mostSignificantBitFirst )
+  {
+    auto numRows = scrambledGeneratingMatrices.numRows();
+    auto numCols = scrambledGeneratingMatrices.numCols();
+    for (size_t row = 0; row < numRows; row++)
+    {
+      for (size_t col = 0; col < numCols; col++)
+      {
+        this->scrambledGeneratingMatrices(row, col) = 
+          bitreverse(this->scrambledGeneratingMatrices(row, col));
+
+      }
+    }
+
+    if ( outputLevel >= DEBUG_OUTPUT )
+    {
+      Cout << (scramblingFlag ? "Scrambled g" : "G")
+        << "enerating matrices with least significant bit first:"
+        << std::endl;
+      for (size_t row = 0; row < numRows; row++)
+      {
+        for (size_t col = 0; col < numCols; col++)
+        {
+          Cout << this->scrambledGeneratingMatrices(row, col) << " ";
+        }
+        Cout << std::endl;
+      }
     }
   }
   
@@ -265,7 +319,9 @@ DigitalNet(
   std::get<0>(data),
   std::get<1>(data),
   std::get<2>(data),
-  problem_db.get_int("method.t_scramble"),
+  problem_db.get_int("method.t_scramble") ?
+    problem_db.get_int("method.t_scramble") :
+    std::numeric_limits<UInt64>::digits,
   !problem_db.get_bool("method.no_digital_shift"),
   !problem_db.get_bool("method.no_scrambling"),
   problem_db.get_int("method.random_seed"),
@@ -533,7 +589,7 @@ void DigitalNet::digital_shift(
   else
   {
     boost::random::mt19937 rng(seed);
-    boost::random::uniform_int_distribution<uint64_t> sampler;
+    boost::random::uniform_int_distribution<UInt64> sampler;
     for (size_t j = 0; j < dMax; ++j)
     {
       digitalShift[j] = sampler(rng);
@@ -543,10 +599,99 @@ void DigitalNet::digital_shift(
 
 /// Toggle linear matrix scrambling of this digital net
 void DigitalNet::scramble(
-  bool apply
+  int seed
 )
 {
-  /// TODO: implement this
+  auto numRows = generatingMatrices.numRows();
+  auto numCols = generatingMatrices.numCols();
+  if ( seed < 0 )
+  {
+    scrambledGeneratingMatrices.shape(numRows, numCols);
+    for ( size_t row = 0; row < numRows; row++ )
+    {
+      for ( size_t col = 0; col < numCols; col++ )
+      {
+        /// Remove scrambling
+        scrambledGeneratingMatrices(row, col) = generatingMatrices(row, col);
+      }
+    }
+  }
+  else
+  {
+    /// Generate scrambling matrices (shape 'dMax' x 'tMax')
+    /// A scrambling matrix is a lower-tridiagonal matrix with shape
+    /// 'tScramble' x 'tMax', i.e.,
+    /// 1 0 0 0 0
+    /// x 1 0 0 0
+    /// x x 1 0 0
+    /// x x x 1 0
+    /// x x x x 1
+    /// which is encoded as a vector of length 'tMax' with integer entries 
+    /// with 'tScramble' bits each (analogous to the generating matrices)
+    boost::random::mt19937 rng(seed);
+    boost::random::uniform_int_distribution<UInt64> sampler;
+
+    UInt64Matrix scramblingMatrices(dMax, tMax);
+    for ( size_t d = 0; d < dMax; d++ )
+    {
+      for ( size_t k = 0; k < tMax; k++ )
+      {
+        /// Get random number
+        /// x x x x x x x x
+        /// |
+        /// 64
+        auto r = sampler(rng);
+
+        /// Truncate to 'tScramble - k' least significant bits
+        /// 0 0 0 0 x x x x
+        ///         |
+        ///         tScramble - k
+        r &= ( (UInt64(1) << (tScramble - k - 1)) - 1 ) |
+          ( UInt64(1) << (tScramble - k - 1) );
+        
+        /// Set diagonal bit
+        /// 0 0 0 0 x x x 1
+        r |= 1;
+
+        /// Shift to the left
+        /// x x x 1 0 0 0 0
+        /// |     |
+        /// |     k
+        /// tScramble - 1
+        scramblingMatrices(d, k) = (r << k);
+      }
+    }
+
+    /// Left-multiply the scramble matrices to the generating matrices to
+    /// scramble
+    UInt64Vector A(tMax); 
+    UInt64Vector B(mMax);
+    scrambledGeneratingMatrices.shape(numRows, numCols);
+    for ( size_t d = 0; d < dMax; d++ )
+    {
+
+      /// Get row 'd' from the scramble matrices
+      for ( size_t t = 0; t < tMax; t++ )
+      {
+        A(t) = scramblingMatrices(d, t);
+      }
+
+      /// Get row 'd' from the generating matrices
+      for ( size_t m = 0; m < mMax; m++ )
+      {
+        B(m) = generatingMatrices(d, m);
+      }
+
+      /// Perform binary multiplication
+       UInt64Vector result = matmul_base2(A, B);
+
+      /// Fill d-th row of array with the scrambled generating matrices
+      for ( size_t m = 0; m < mMax; m++ )
+      {
+        scrambledGeneratingMatrices(d, m) = result(m);
+      }
+    }
+  }
 }
 
 /// Generates digital net points without error checking
@@ -577,7 +722,7 @@ void DigitalNet::unsafe_get_points(
 
   /// Generate points between `nMin` and `nMax`
   int digits = std::numeric_limits<UInt64>::digits;
-  double oneOnPow2tMax = 1 / Real(UInt64(1) << digits - 1) / 2; /// 1 / 2^(-tMax)
+  double oneOnPow2tScramble = 1 / Real(UInt64(1) << digits - 1) / 2; /// 1 / 2^(-tMax)
   for ( UInt64 k = nMin; k < nMax; ++k ) /// Loop over all points
   {
     next(k, current_point); /// Generate the next point as UInt64Vector
@@ -585,7 +730,7 @@ void DigitalNet::unsafe_get_points(
     for ( int j = 0; j < points.numRows(); j++ ) /// Loop over all dimensions
     {
       points(j, idx - nMin) = 
-        (current_point[j] ^ digitalShift[j]) * oneOnPow2tMax; // apply digital shift
+        (current_point[j] ^ digitalShift[j]) * oneOnPow2tScramble; // apply digital shift
     }
   }
 }
@@ -611,7 +756,7 @@ void DigitalNet::next(
   auto n = count_consecutive_trailing_zero_bits(k); // From "dakota_bit_utils"
   for ( size_t j = 0; j < current_point.length(); j++ ) // Loop over dimensions
   {
-    current_point[j] ^= generatingMatrices(j, n); // ^ is xor
+    current_point[j] ^= scrambledGeneratingMatrices(j, n); // ^ is xor
   }
 }
 

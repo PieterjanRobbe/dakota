@@ -17,6 +17,13 @@ namespace Dakota {
 /// Bit operations are taken from the Stanford Bithack webpage
 /// http://www.graphics.stanford.edu/~seander/bithacks.html
 
+/// Get the bit at position 'j'
+template <typename T>
+inline T bitget(T v, int j)
+{
+  return (v >> j) & T(1);
+}
+
 /// Count consecutive trailing zero bits
 inline unsigned count_consecutive_trailing_zero_bits(UInt32 v)
 {
@@ -56,10 +63,31 @@ inline UInt64 binary2gray(UInt64 v)
   return v ^ (v >> 1);
 }
 
-/// CHeck if given integer is a power of 2
+/// Check if given integer is a power of 2
 inline bool ispow2(unsigned v)
 {
   return v && !(v & (v - 1));
+}
+
+/// Matrix matrix multiplication in base 2
+template<typename UnsignedArrayType>
+UnsignedArrayType matmul_base2(
+  UnsignedArrayType A,
+  UnsignedArrayType B
+)
+{
+  auto t = A.length();
+  auto m = B.length();
+
+  UnsignedArrayType result(m);
+  for ( size_t k = 0; k < m; k++ )
+  {
+    for ( size_t i = 0; i < t; i ++ )
+    {
+      result(k) ^= bitget(B(k), i) * A(i);
+    }
+  }
+  return result;
 }
 
 } // namespace Dakota

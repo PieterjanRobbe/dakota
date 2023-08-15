@@ -101,7 +101,7 @@ public:
     unsafe_get_points(nMin, nMax, points);
 
     /// Print summary info
-    if ( outputLevel >= Pecos::DEBUG_OUTPUT )
+    if ( outputLevel >= Pecos::VERBOSE_OUTPUT )
     {
       Cout << "Successfully generated " << points.numCols()
         << " low-discrepancy points in " << points.numRows() << " dimensions:"

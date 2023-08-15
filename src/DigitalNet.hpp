@@ -92,15 +92,18 @@ public:
   void no_digital_shift() { digital_shift(-1); }
 
   /// Apply linear matrix scramble to this digital net
-  void scramble() { scramble(true); }
+  void scramble() { scramble(generate_system_seed()); }
 
   /// Do not apply linear matrix scramble to this digital net
-  void no_scramble() { scramble(false); }
+  void no_scramble() { scramble(-1); }
 
 private:
 
   /// Generating matrices of this digital net
   UInt64Matrix generatingMatrices;
+
+  /// Scrambled generating matrices of this digital net
+  UInt64Matrix scrambledGeneratingMatrices;
 
   /// Number of bits of each integer in generatingMatrices
   /// Also: number of rows in each generating matrix
@@ -155,7 +158,7 @@ private:
 
   /// Toggle linear matrix scrambling of this digital net
   void scramble(
-    bool apply
+    int seed
   );
 
   /// Generates digital net points without error checking
