@@ -3056,7 +3056,7 @@
               <oneOf label="Predefined Generating Matrices">
                 <keyword id="joe_kuo" name="joe_kuo" code="{N_mdm(true,joe_kuo)}" label="Generating matrices from Joe and Kuo (2008)">
                 </keyword>
-                <keyword id="sobol" name="sobol" code="{N_mdm(true,sobol)}" label="Generating matrices for Sobol sequence">
+                <keyword id="sobol_order_2" name="sobol_order_2" code="{N_mdm(true,sobol_order_2)}" label="Generating matrices for Sobol sequence">
                 </keyword>
               </oneOf>
             </keyword>

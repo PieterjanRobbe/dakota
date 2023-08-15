@@ -55,8 +55,9 @@ ordering(ordering)
       << "lattice rule is " << mMax << "." << std::endl;
     Cout << "The value of the random seed is " << seedValue << "."
       << std::endl;
-    Cout << "Found generating vector ";
-    for (size_t j=0; j < generatingVector.length(); ++j)
+    auto length = generatingVector.length();
+    Cout << "Found generating vector of length " << length << ":";
+    for (size_t j=0; j < length; ++j)
       Cout << generatingVector[j] << " ";
     Cout << std::endl;
   }
@@ -207,31 +208,6 @@ Rank1Lattice::~Rank1Lattice()
 
 }
 
-/// Perform checks on dMax
-/// Checks if dMax is positive (> 0)
-void Rank1Lattice::check_dMax()
-{
-  if ( dMax == 0 )
-  {
-    Cerr << "\nError: must have at least one element in the generating "
-      <<  "vector, found 0." << std::endl;
-    abort_handler(METHOD_ERROR);
-  }
-}
-
-/// Perform checks on mMax
-/// Checks if mMax is positive (> 0)
-void Rank1Lattice::check_mMax()
-{
-  if ( mMax < 1 )
-  {
-    Cerr << "\nError: the log2 of the maximum number of points 'mMax' must "
-      << "be positive. Did you supply a custom generating vector but forgot "
-      << "to specify the keyword 'm_max'?" << std::endl;
-    abort_handler(METHOD_ERROR);
-  }
-}
-
 /// Extract the generating vector and log2 of the maximum number of points from
 /// the given problem description database
 /// There are 3 different ways to specify a generating vector:
@@ -265,6 +241,10 @@ std::tuple<UInt32Vector, int> Rank1Lattice::get_data(
   IntVector inlineVector = 
     problem_db.get_iv("method.generating_vector.inline");
   size_t len = inlineVector.length();
+
+  /// NOTE: outputLevel has not been set yet, so gettting it directly from
+  /// the 'problem_db' instead
+  bool outputLevel = problem_db.get_short("method.output");
 
   /// Case I: the generating vector is provided in an external file
   if ( !file.empty() )
@@ -350,6 +330,8 @@ const std::tuple<UInt32Vector, int> Rank1Lattice::get_inline_generating_vector(
   
   /// Can't get away without making a copy here, conversion from
   /// int to UInt32, maybe there's a smarter way to do this?
+  /// NOTE: that smarter way would probably mean implementing
+  /// 'UINT32LIST' instead of 'INTEGERLIST'
   UInt32Vector generatingVector;
   generatingVector.resize(len);
   for (size_t j = 0; j < len; ++j)
@@ -368,11 +350,16 @@ const std::tuple<UInt32Vector, int> Rank1Lattice::get_default_generating_vector(
   ProblemDescDB& problem_db
 )
 {
+  /// NOTE: outputLevel has not been set yet, so gettting it directly from
+  /// the 'problem_db' instead
+  bool outputLevel = problem_db.get_short("method.output");
+
+  /// Select predefined generating vector
   if ( problem_db.get_bool("method.kuo") )
   {
     if ( outputLevel >= DEBUG_OUTPUT )
     {
-      Cout << "Found default generating vector 'kuo'"
+      Cout << "Found predefined generating vector 'kuo'"
         << std::endl;
     }
 
@@ -387,7 +374,7 @@ const std::tuple<UInt32Vector, int> Rank1Lattice::get_default_generating_vector(
     {
       if ( problem_db.get_bool("method.cools_kuo_nuyens") )
       {
-        Cout << "Found default generating vector 'cools_kuo_nuyens'"
+        Cout << "Found predefined generating vector 'cools_kuo_nuyens'"
           << std::endl;
       }
       else

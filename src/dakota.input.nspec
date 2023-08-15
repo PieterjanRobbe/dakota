@@ -2745,7 +2745,7 @@ KEYWORD method {N_mdm3(start,0,stop)}
           ( predefined {0}
             joe_kuo {N_mdm(true,joe_kuo)}
             |
-            sobol {N_mdm(true,sobol)}
+            sobol_order_2 {N_mdm(true,sobol_order_2)}
            )
          ]
         [ ordering {0}

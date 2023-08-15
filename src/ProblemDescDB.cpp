@@ -1562,7 +1562,8 @@ const IntVector& ProblemDescDB::get_iv(const String& entry_name) const
       {"fsu_quasi_mc.sequenceStart", P_MET sequenceStart},
       {"nond.refinement_samples", P_MET refineSamples},
       {"parameter_study.steps_per_variable", P_MET stepsPerVariable},
-      {"generating_vector.inline", P_MET generatingVector}
+      {"generating_vector.inline", P_MET generatingVector},
+      {"generating_matrices.inline", P_MET generatingMatrices}
     },
     { /* model */
       {"refinement_samples", P_MOD refineSamples}
@@ -1606,22 +1607,6 @@ const IntVector& ProblemDescDB::get_iv(const String& entry_name) const
       {"lengths", P_RES fieldLengths},
       {"num_coordinates_per_field", P_RES numCoordsPerField}
     },
-    entry_name, dbRep);
-}
-
-
-const IntMatrix& ProblemDescDB::get_im(const String& entry_name) const
-{
-  return get<const IntMatrix>
-  ( "get_im()",
-    { /* environment */ },
-    { /* method */
-      {"generating_matrices.inline", P_MET generatingMatrices}
-    },
-    { /* model */ },
-    { /* variables */ },
-    { /* interface */ },
-    { /* responses */ },
     entry_name, dbRep);
 }
 
@@ -2726,7 +2711,7 @@ bool ProblemDescDB::get_bool(const String& entry_name) const
       {"most_significant_bit_first", P_MET mostSignificantBitFirst},
       {"least_significant_bit_first", P_MET leastSignificantBitFirst},
       {"joe_kuo", P_MET joe_kuo},
-      {"sobol", P_MET sobol},
+      {"sobol_order_2", P_MET sobol_order_2},
       {"gray_code_ordering", P_MET grayCodeOrdering}
     },
     { /* model */
@@ -2916,7 +2901,8 @@ void ProblemDescDB::set(const String& entry_name, const IntVector& iv)
   ( "set(IntVector&)",
     { /* environment */ },
     { /* method */
-      {"generating_vector.inline", P_MET generatingVector}
+      {"generating_vector.inline", P_MET generatingVector},
+      {"generating_matrices.inline", P_MET generatingMatrices}
     },
     { /* model */ },
     { /* variables */
@@ -2952,24 +2938,6 @@ void ProblemDescDB::set(const String& entry_name, const IntVector& iv)
     entry_name, dbRep);
 
   rep_iv = iv;
-}
-
-
-void ProblemDescDB::set(const String& entry_name, const IntMatrix& im)
-{
-  IntMatrix& rep_im = get<IntMatrix>
-  ( "set(IntMatrix&)",
-    { /* environment */ },
-    { /* method */
-      {"generating_matrices.inline", P_MET generatingMatrices}
-    },
-    { /* model */ },
-    { /* variables */ },
-    { /* interface */ },
-    { /* responses */ },
-    entry_name, dbRep);
-
-  rep_im = im;
 }
 
 

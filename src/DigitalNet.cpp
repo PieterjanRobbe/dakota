@@ -13,11 +13,6 @@
 //- Checked by:
 //- Version:
 
-/// TODO:
-/// - add a lot of tests
-/// - implement scrambling
-/// - make slides
-
 #include "dakota_bit_utils.hpp"
 #include "dakota_data_io.hpp"
 #include "dakota_data_types.hpp"
@@ -41,12 +36,12 @@ DigitalNet::DigitalNet(
   bool scramblingFlag,                    /// Use linear matrix scramble if true
   int seedValue,                          /// Random seed value
   DigitalNetOrdering ordering,            /// Order of the digital net points
-  bool mostSignificantBit,                /// Generating matrices are stored with most significant bit first if true
+  bool mostSignificantBitFirst,           /// Generating matrices are stored with most significant bit first if true
   short outputLevel                       /// Verbosity
 ) :
 LowDiscrepancySequence(
   mMax,
-  generatingMatrices.numCols(),
+  generatingMatrices.numRows(),
   seedValue,
   outputLevel
 ),
@@ -56,7 +51,7 @@ tScramble(tScramble),
 digitalShiftFlag(digitalShiftFlag),
 scramblingFlag(scramblingFlag),
 ordering(ordering),
-mostSignificantBit(mostSignificantBit)
+mostSignificantBitFirst(mostSignificantBitFirst)
 {
   /// Print summary info when debugging
   if ( outputLevel >= DEBUG_OUTPUT )
@@ -72,18 +67,20 @@ mostSignificantBit(mostSignificantBit)
     Cout << "The value of the random seed is " << seedValue << "."
       << std::endl;
     Cout << "Assuming generating matrix is stored with "
-      << ( mostSignificantBit ? "most" : "least" ) << " significant bit first."
-      << std::endl;
-    Cout << "Found generating matrices: " << std::endl;
-    for (size_t row = 0; row < generatingMatrices.numRows(); row++)
+      << ( mostSignificantBitFirst ? "most" : "least" ) << " significant bit "
+      << "first." << std::endl;
+    auto numRows = generatingMatrices.numRows();
+    auto numCols = generatingMatrices.numCols();
+    Cout << "Found generating matrices of shape " << numRows << " x " 
+      << numCols << ":" << std::endl;
+    for (size_t row = 0; row < numRows; row++)
     {
-      for (size_t col = 0; col < generatingMatrices.numCols(); col++)
+      for (size_t col = 0; col < numCols; col++)
       {
         Cout << generatingMatrices(row, col) << " ";
       }
       Cout << std::endl;
     }
-    Cout << std::endl;
   }
 
   ///
@@ -115,10 +112,43 @@ mostSignificantBit(mostSignificantBit)
   }
 
   ///
-  /// Options for setting the scrmbling of this digital net
+  /// Reverse bits in generating matrices if needed
+  ///
+  if ( mostSignificantBitFirst )
+  {
+    auto numRows = generatingMatrices.numRows();
+    auto numCols = generatingMatrices.numCols();
+    for (size_t row = 0; row < numRows; row++)
+    {
+      for (size_t col = 0; col < numCols; col++)
+      {
+        this->generatingMatrices(row, col) = 
+          bitreverse(this->generatingMatrices(row, col));
+
+      }
+    }
+
+    if ( outputLevel >= VERBOSE_OUTPUT )
+    {
+      Cout << "Generating matrices with least significant bit first:"
+        << std::endl;
+      for (size_t row = 0; row < numRows; row++)
+      {
+        for (size_t col = 0; col < numCols; col++)
+        {
+          Cout << this->generatingMatrices(row, col) << " ";
+        }
+        Cout << std::endl;
+      }
+    }
+  }
+
+  ///
+  /// Options for setting the scrambling of this digital net
   ///
   /// TODO: implement this
   /// TODO: check if `tMax` <= `tScramble` <= 64
+  /// TODO: definitely check that tMax <= 64 as well!
 
   ///
   /// Options for setting the ordering of this digital net
@@ -145,7 +175,7 @@ mostSignificantBit(mostSignificantBit)
     }
     else
     {
-      Cout << "Using radical inverse ordering of the digital net points" 
+      Cout << "Using gray code ordering of the digital net points" 
         << std::endl;
     }
   }
@@ -180,7 +210,7 @@ DigitalNet::DigitalNet(
   int seedValue
 ) :
 DigitalNet(
-  UInt64Matrix(Teuchos::View, &joe_kuo_d250_t32_m32[0][0], 32, 32, 250),
+  UInt64Matrix(Teuchos::View, &joe_kuo_d1024_t32_m32[0][0], 1024, 1024, 32),
   32,
   32,
   32,
@@ -199,7 +229,7 @@ DigitalNet(
 DigitalNet::DigitalNet(
 ) :
 DigitalNet(
-  UInt64Matrix(Teuchos::View, &joe_kuo_d250_t32_m32[0][0], 32, 32, 250),
+  UInt64Matrix(Teuchos::View, &joe_kuo_d1024_t32_m32[0][0], 1024, 1024, 32),
   32,
   32,
   32,
@@ -242,7 +272,7 @@ DigitalNet(
   problem_db.get_bool("method.ordering.natural") ? 
     DIGITAL_NET_NATURAL_ORDERING :
     DIGITAL_NET_GRAY_CODE_ORDERING,
-  problem_db.get_bool("method.most_significant_bit_first"),
+  problem_db.get_bool("method.least_significant_bit_first") ? false : true,
   problem_db.get_short("method.output")
 )
 {
@@ -288,8 +318,12 @@ std::tuple<UInt64Matrix, int, int> DigitalNet::get_data(
   String file = problem_db.get_string("method.generating_matrices.file");
 
   /// Get the inline generating matrices
-  IntMatrix inlineMatrices = 
-    problem_db.get_im("method.generating_matrices.inline");
+  IntVector inlineMatrices = 
+    problem_db.get_iv("method.generating_matrices.inline");
+
+  /// NOTE: outputLevel has not been set yet, so gettting it directly from
+  /// the 'problem_db' instead
+  bool outputLevel = problem_db.get_short("method.output");
 
   ///
   /// Case I: the generating matrices are provided in an external file
@@ -308,7 +342,7 @@ std::tuple<UInt64Matrix, int, int> DigitalNet::get_data(
   ///
   /// Case II: the generating matrices are provided in the input file
   ///
-  else if ( !inlineMatrices.empty() )
+  else if ( inlineMatrices.length() )
   {
     if ( outputLevel >= DEBUG_OUTPUT )
     {
@@ -338,6 +372,15 @@ std::tuple<UInt64Matrix, int, int> DigitalNet::get_data(
       Cerr << "\nError: you can't specify default generating matrices and "
         << "the number of bits of the integers in the generating matrices "
         << "'t_max' at the same time." << std::endl;
+      abort_handler(METHOD_ERROR);
+    }
+
+    /// Verify that `{most|least}_significant_bit_first` has not been set
+    if ( problem_db.get_bool("method.least_significant_bit_first") ||
+      problem_db.get_bool("method.most_significant_bit_first") )
+    {
+      Cerr << "\nError: you can't specify default generating matrices and "
+        << "an integer format at the same time." << std::endl;
       abort_handler(METHOD_ERROR);
     }
 
@@ -391,29 +434,39 @@ const std::tuple<UInt64Matrix, int, int> DigitalNet::get_inline_generating_matri
   ProblemDescDB& problem_db
 )
 {
-  /// Get the inline generating vector
-  IntMatrix inlineMatrices = 
-    problem_db.get_im("method.generating_matrices.inline");
-  int numRows = inlineMatrices.numRows();
-  int numCols = inlineMatrices.numCols();
+  /// Get the inline generating matrices
+  /// NOTE: generating matrices are read as an integer vector and reshaped
+  /// into matrices here, using the number of columns given in the
+  /// 'm_max' keyword
+  IntVector inlineMatrices = 
+    problem_db.get_iv("method.generating_matrices.inline");
+  int numCols = problem_db.get_int("method.m_max");
+  /// NOTE: Catch missing 'm_max' here to avoid division by 0 in numRows
+  if ( !numCols )
+  {
+    Cerr << "Error: you must provide the keyword 'm_max' (> 0) when "
+      << "specifying inline generating matrices" << std::endl;
+    abort_handler(METHOD_ERROR);
+  }
+  int numRows = inlineMatrices.length() / numCols;
   
   /// Can't get away without making a copy here, conversion from
   /// int to UInt64, maybe there's a smarter way to do this?
   /// NOTE: what if UInt64 integer is provided?
-  /// We can't store this as an INTEGERLIST anymore
+  /// We can't store this as an 'INTEGERLIST' anymore...
   UInt64Matrix generatingMatrices;
   generatingMatrices.reshape(numRows, numCols);
   for (int row = 0; row < numRows; ++row)
   {
     for (int col = 0; col < numCols; ++col)
     {
-      generatingMatrices(row, col) = inlineMatrices(row, col);
+      generatingMatrices(row, col) = inlineMatrices(row*numCols + col);
     }
   }
 
   return std::make_tuple(
     generatingMatrices,
-    problem_db.get_int("method.m_max"),
+    numCols,
     problem_db.get_int("method.t_max")
   );
 }
@@ -423,16 +476,20 @@ const std::tuple<UInt64Matrix, int, int> DigitalNet::get_default_generating_matr
   ProblemDescDB& problem_db
 )
 {
-  /// Select default generating matrices
-  if ( problem_db.get_bool("method.joe_kuo") )
+  /// NOTE: outputLevel has not been set yet, so gettting it directly from
+  /// the 'problem_db' instead
+  bool outputLevel = problem_db.get_short("method.output");
+
+  /// Select predefined generating matrices
+  if ( problem_db.get_bool("method.sobol_order_2") )
   {
     if ( outputLevel >= DEBUG_OUTPUT )
     {
-      Cout << "Found default generating matrices 'joe_kuo'." << std::endl;
+      Cout << "Found predefined generating matrices 'sobol_order_2'." << std::endl;
     }
 
     return std::make_tuple(
-      UInt64Matrix(Teuchos::View, &joe_kuo_d250_t32_m32[0][0], 250, 250, 32),
+      UInt64Matrix(Teuchos::View, &sobol_d250_t64_m32[0][0], 250, 250, 32),
       32,
       32
     );
@@ -441,21 +498,22 @@ const std::tuple<UInt64Matrix, int, int> DigitalNet::get_default_generating_matr
   {
     if ( outputLevel >= DEBUG_OUTPUT )
     {
-      if ( problem_db.get_bool("method.sobol") )
+      if ( problem_db.get_bool("method.joe_kuo") )
       {
-        Cout << "Found default generating matrices 'sobol'." << std::endl;
+        Cout << "Found predefined generating matrices 'joe_kuo'."
+          << std::endl;
       }
       else
       {
         Cout << "No generating matrices provided, using fall-back option "
-          << "'sobol'" << std::endl;
+          << "'joe_kuo'" << std::endl;
       }
     }
 
     return std::make_tuple(
-      UInt64Matrix(Teuchos::View, &sobol_d1024_t32_m32[0][0], 1024, 1024, 32),
+      UInt64Matrix(Teuchos::View, &joe_kuo_d1024_t32_m32[0][0], 1024, 1024, 32),
       32,
-      32
+      64
     );
   }
 }
@@ -502,6 +560,14 @@ void DigitalNet::unsafe_get_points(
   RealMatrix& points
 )
 {
+  /// Check if a power of 2 number of points is request when using natural ordering
+  if ( ordering == DIGITAL_NET_NATURAL_ORDERING && !ispow2(points.numCols()))
+  {
+    Cerr << "Error: natural ordering requires the requested number of points to be "
+      << "a power of 2." << std::endl;
+    abort_handler(METHOD_ERROR);
+  }
+
   /// Iterativey generate all points up to `nMin-1`
   UInt64Vector current_point(points.numRows()); /// Set to 0 by default
   for ( size_t k = 0; k < nMin; k++ )
@@ -510,23 +576,24 @@ void DigitalNet::unsafe_get_points(
   }
 
   /// Generate points between `nMin` and `nMax`
-  double oneOnPow2tMax = std::ldexp(1, -tMax); /// 1 / 2^(-tMax)
-  // double oneOnPow2tMax = 1 / Real(UInt64(1) << 63) / 2; /// 1 / 2^(-tMax)
+  int digits = std::numeric_limits<UInt64>::digits;
+  double oneOnPow2tMax = 1 / Real(UInt64(1) << digits - 1) / 2; /// 1 / 2^(-tMax)
   for ( UInt64 k = nMin; k < nMax; ++k ) /// Loop over all points
   {
     next(k, current_point); /// Generate the next point as UInt64Vector
     auto idx = (this->*reorder)(k);
     for ( int j = 0; j < points.numRows(); j++ ) /// Loop over all dimensions
     {
-      points[idx - nMin][j] = current_point[j] * oneOnPow2tMax;
+      points(j, idx - nMin) = 
+        (current_point[j] ^ digitalShift[j]) * oneOnPow2tMax; // apply digital shift
     }
   }
 }
 
 /// Get the next point of the sequence represented as an unsigned integer
 /// vector
-/// NOTE: Uses the Antonov & Saleev (1979) iterative construction
-/// Knowing the current point with index `k`, the next point with index `k + 1`
+/// NOTE: Uses the Antonov & Saleev (1979) iterative construction:
+/// knowing the current point with index `k`, the next point with index `k + 1`
 /// is obtained by XOR'ing the current point with the `n`-th column of the 
 /// `j`-th generating matrix, i.e.,
 ///
@@ -539,11 +606,12 @@ void DigitalNet::next(
   UInt64Vector& current_point
 )
 {
+  if ( k == 0 )
+    return;
   auto n = count_consecutive_trailing_zero_bits(k); // From "dakota_bit_utils"
   for ( size_t j = 0; j < current_point.length(); j++ ) // Loop over dimensions
   {
-    current_point[j] ^= generatingMatrices[j][n]; // ^ is xor
-    current_point[j] ^= digitalShift[j]; // apply digital shift
+    current_point[j] ^= generatingMatrices(j, n); // ^ is xor
   }
 }
 

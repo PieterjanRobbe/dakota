@@ -122,7 +122,7 @@ private:
   DigitalNetOrdering ordering;
 
   /// Most significant bit comes first in generatingMatrices when true
-  bool mostSignificantBit;
+  bool mostSignificantBitFirst;
 
   /// Extract the generating matrices, corresponding log2 of the maximum number
   /// of points, number of bits in each integer of the generating matrices, and 

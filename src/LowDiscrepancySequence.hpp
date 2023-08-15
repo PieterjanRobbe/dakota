@@ -141,48 +141,6 @@ protected:
   /// {SILENT, QUIET, NORMAL, VERBOSE, DEBUG}_OUTPUT
   short outputLevel;
 
-  /// Perform checks on dMax
-  /// Checks if dMax is positive (> 0)
-  /// NOTE: this method can be overridden in the derived class in order to 
-  /// provide more meaningful error messages
-  void check_dMax()
-  {
-    if ( dMax < 1 )
-    {
-      Cerr << "\nError: maximum dimension 'dMax' must be positive (> 0), " 
-        << "got " << dMax << "." << std::endl;
-      abort_handler(METHOD_ERROR);
-    }
-  }
-
-  /// Perform checks on mMax
-  /// Checks if mMax is positive (> 0)
-  /// NOTE: this method can be overridden in the derived class in order to 
-  /// provide more meaningful error messages
-  void check_mMax()
-  {
-    if ( mMax < 1 )
-    {
-      Cerr << "\nError: log2 of the maximum number of points 'mMax' must be "
-        << "positive (> 0), got " << mMax << "." << std::endl;
-      abort_handler(METHOD_ERROR);
-    }
-  }
-
-  /// Perform checks on seedValue
-  /// Checks if seedValue is positive or zero (>= 0)
-  /// NOTE: this method can be overridden in the derived class in order to 
-  /// provide more meaningful error messages
-  void check_seedValue()
-  {
-    if ( seedValue < 0 )
-    {
-      Cerr << "\nError: value for random seed 'seedValue' must be 0 or more, "
-        <<  "got " << seedValue << "." << std::endl;
-      abort_handler(METHOD_ERROR);
-    }
-  }
-
   /// Perform checks on the matrix `points`
   /// Each column of `points` contains a `dimension`-dimensional point
   /// where `dimension` is equal to the number of rows of `points` 
@@ -199,8 +157,8 @@ protected:
   )
   {
     /// Check if maximum number of points is exceeded
-    auto maxPoints = (1 << mMax);
-    if ( nMax > maxPoints )
+    auto maxPoints = UInt64(1) << mMax;
+    if ( nMax > std::numeric_limits<UInt64>::max() || nMax > maxPoints )
     {
       Cerr << "\nError: requested number of samples " << nMax
         << " is larger than the maximum allowed number of points "
@@ -235,6 +193,47 @@ protected:
       const size_t nMax, 
       RealMatrix& points
   ) = 0;
+
+private:
+
+  /// Perform checks on dMax
+  /// Checks if dMax is positive (> 0)
+  void check_dMax()
+  {
+    if ( dMax < 1 )
+    {
+      Cerr << "\nError: maximum dimension 'dMax' must be positive (> 0), " 
+        << "got " << dMax << ". Did you specify an empty generating vector "
+        << "or empty generating matrices?" << std::endl;
+      abort_handler(METHOD_ERROR);
+    }
+  }
+
+  /// Perform checks on mMax
+  /// Checks if mMax is positive (> 0)
+  void check_mMax()
+  {
+    if ( mMax < 1 )
+    {
+      Cerr << "\nError: log2 of the maximum number of points 'mMax' must be "
+        << "positive (> 0), got " << mMax << ". Did you provide a default "
+        << "generating vector or default generating matrices, but forgot to "
+        << "set the keyword 'm_max' in the input file?" << std::endl;
+      abort_handler(METHOD_ERROR);
+    }
+  }
+
+  /// Perform checks on seedValue
+  /// Checks if seedValue is positive or zero (>= 0)
+  void check_seedValue()
+  {
+    if ( seedValue < 0 )
+    {
+      Cerr << "\nError: value for random seed 'seedValue' must be 0 or more, "
+        <<  "got " << seedValue << "." << std::endl;
+      abort_handler(METHOD_ERROR);
+    }
+  }
 
 };
 

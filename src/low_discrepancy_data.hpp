@@ -28,11 +28,11 @@ extern UInt32 cools_kuo_nuyens_d250_m20[];
 extern UInt32 kuo_d3600_m20[];
 
 /// Sobol generating matrices from Joe and Kuo (2008)
-extern UInt64 joe_kuo_d250_t32_m32[][32];
-
-/// Sobol generating matrices [source?]
 /// NOTE: Truncated to 1024 dimensions (to avoid storage issues)
-extern UInt64 sobol_d1024_t32_m32[][32];
+extern UInt64 joe_kuo_d1024_t32_m32[][1024];
+
+/// Order 2 Sobol generating matrices [source?]
+extern UInt64 sobol_d250_t64_m32[][250];
 
 } // namespace Dakota
 

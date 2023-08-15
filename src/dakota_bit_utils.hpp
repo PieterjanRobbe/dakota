@@ -56,6 +56,11 @@ inline UInt64 binary2gray(UInt64 v)
   return v ^ (v >> 1);
 }
 
+/// CHeck if given integer is a power of 2
+inline bool ispow2(unsigned v)
+{
+  return v && !(v & (v - 1));
+}
 
 } // namespace Dakota
 

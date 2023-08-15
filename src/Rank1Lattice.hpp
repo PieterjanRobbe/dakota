@@ -100,14 +100,6 @@ private:
   /// Scale factor for rank-1 lattice points
   Real scale;
 
-  /// Perform checks on dMax
-  /// Checks if dMax is positive (> 0)
-  void check_dMax();
-
-  /// Perform checks on mMax
-  /// Checks if mMax is positive (> 0)
-  void check_mMax();
-
   /// Extract the generating vector and log2 of the maximum number of points
   /// from the given problem description database
   std::tuple<UInt32Vector, int> get_data(

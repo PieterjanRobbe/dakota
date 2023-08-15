@@ -6612,9 +6612,7 @@ static IntVector
 	MP_(sequenceLeap),
 	MP_(sequenceStart),
 	MP_(stepsPerVariable),
-  MP_(generatingVector);
-
-static IntMatrix
+  MP_(generatingVector),
   MP_(generatingMatrices);
 
 static Method_mp_ilit2
@@ -6962,7 +6960,7 @@ static bool
   MP_(mostSignificantBitFirst),
   MP_(leastSignificantBitFirst),
   MP_(joe_kuo),
-  MP_(sobol),
+  MP_(sobol_order_2),
   MP_(grayCodeOrdering);
 
 static short

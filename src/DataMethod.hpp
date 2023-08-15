@@ -913,12 +913,12 @@ public:
   /// Number of rows in the linear scramble matrix
   int scrambleSize;
   /// Inline generating matrices of the digital net
-  IntMatrix generatingMatrices;
+  IntVector generatingMatrices;
   /// Name of file with generating matrices
   String generatingMatricesFileName;
   /// Predefined generating matrices
   bool joe_kuo;
-  bool sobol;
+  bool sobol_order_2;
   /// Ordering of the digital net points
   bool grayCodeOrdering;
   
