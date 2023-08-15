@@ -128,8 +128,8 @@ private:
   bool mostSignificantBitFirst;
 
   /// Extract the generating matrices, corresponding log2 of the maximum number
-  /// of points, number of bits in each integer of the generating matrices, and 
-  /// the number of rows in the linear scramble matrix from the given problem 
+  /// of points and number of bits in each integer of the generating matrices 
+  /// from the given problem 
   std::tuple<UInt64Matrix, int, int> get_data(
     ProblemDescDB& problem_db
   );
@@ -156,10 +156,18 @@ private:
     int seed
   );
 
-  /// Toggle linear matrix scrambling of this digital net
+  /// Scramble this digital net
   void scramble(
     int seed
   );
+
+  /// Returns a set of linear scrambling matrices for this digital net
+  UInt64Matrix get_linear_scrambling_matrices(
+    int seed
+  );
+
+  /// Reverse the bits in the scrambled generating matrices
+  void bitreverse_generating_matrices();
 
   /// Generates digital net points without error checking
   void unsafe_get_points(
