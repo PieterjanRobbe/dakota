@@ -95,7 +95,7 @@ public:
   void scramble() { scramble(generate_system_seed()); }
 
   /// Do not apply linear matrix scramble to this digital net
-  void no_scramble() { scramble(-1); }
+  void no_scrambling() { scramble(-1); }
 
 private:
 

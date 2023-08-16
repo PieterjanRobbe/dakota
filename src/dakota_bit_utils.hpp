@@ -57,6 +57,20 @@ inline UInt64 bitreverse(UInt64 v)
     | UInt64(bitreverse(UInt32(v >> 32)));
 }
 
+/// Reverse bits of arbitrary unsigned integer
+template<typename T>
+inline T bitreverse(T v, int s)
+{
+  T r = 0;
+  for ( size_t j = 0; j < s; j++ )
+  {
+    r <<= 1;
+    r |= v & 1;
+    v >>= 1;
+  }
+  return r;
+}
+
 /// Convert binary to Gray code order
 inline UInt64 binary2gray(UInt64 v)
 {

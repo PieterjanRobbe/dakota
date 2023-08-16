@@ -52,11 +52,11 @@ digitalShiftFlag(digitalShiftFlag),
 scramblingFlag(scramblingFlag),
 ordering(ordering),
 mostSignificantBitFirst(mostSignificantBitFirst)
-{
+{ 
   /// Shape of the generating matrices
   auto numRows = generatingMatrices.numRows();
   auto numCols = generatingMatrices.numCols();
-  
+
   /// Print summary info when debugging
   if ( outputLevel >= DEBUG_OUTPUT )
   {
@@ -82,6 +82,19 @@ mostSignificantBitFirst(mostSignificantBitFirst)
         Cout << generatingMatrices(row, col) << " ";
       }
       Cout << std::endl;
+    }
+  }
+
+  /// If most significant bit first, bitreverse the generating matrices
+  if ( mostSignificantBitFirst )
+  {
+    for ( size_t row = 0; row < numRows; row++ )
+    {
+      for ( size_t col = 0; col < numCols; col++ )
+      {
+        this->generatingMatrices(row, col)
+          = bitreverse(this->generatingMatrices(row, col), tMax);
+      }
     }
   }
 
@@ -429,8 +442,9 @@ const std::tuple<UInt64Matrix, int, int> DigitalNet::get_generating_matrices_fro
       int col = 0;
       while ( numbers >> number )
       {
-        generatingMatrices(row++, col++) = std::stoull(number); 
+        generatingMatrices(row, col++) = std::stoull(number); 
       }
+      row++;
     }
 
     return std::make_tuple(
@@ -617,10 +631,7 @@ void DigitalNet::scramble(
   }
 
   /// Reverse bits if needed
-  if ( !mostSignificantBitFirst )
-  {
-    bitreverse_generating_matrices();
-  }
+  bitreverse_generating_matrices();
 }
 
 /// Returns a set of linear scrambling matrices for this digital net
