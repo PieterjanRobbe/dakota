@@ -301,7 +301,9 @@ DigitalNet(
     std::numeric_limits<UInt64>::digits,
   !problem_db.get_bool("method.no_digital_shift"),
   !problem_db.get_bool("method.no_scrambling"),
-  problem_db.get_int("method.random_seed"),
+  problem_db.get_int("method.random_seed") ?
+    problem_db.get_int("method.random_seed") :
+    generate_system_seed(),
   problem_db.get_bool("method.ordering.natural") ? 
     DIGITAL_NET_NATURAL_ORDERING :
     DIGITAL_NET_GRAY_CODE_ORDERING,

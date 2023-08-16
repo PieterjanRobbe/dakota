@@ -192,7 +192,9 @@ Rank1Lattice(
   std::get<0>(data), /// Unpack generating vector
   std::get<1>(data), /// Unpack log2 of maximum number of points
   !problem_db.get_bool("method.no_random_shift"),
-  problem_db.get_int("method.random_seed"),
+  problem_db.get_int("method.random_seed") ?
+    problem_db.get_int("method.random_seed") :
+    generate_system_seed(),
   problem_db.get_bool("method.ordering.natural") ? 
     RANK_1_LATTICE_NATURAL_ORDERING :
     RANK_1_LATTICE_RADICAL_INVERSE_ORDERING,
