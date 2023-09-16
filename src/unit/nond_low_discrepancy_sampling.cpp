@@ -351,13 +351,10 @@ BOOST_AUTO_TEST_CASE(NonDLowDiscrepancySampling_check_active_variables_sampling)
 }
 
 // +-------------------------------------------------------------------------+
-// |                 Cannot sample correlated distributions                  |
+// |                Sample from correlated random variables                  |
 // +-------------------------------------------------------------------------+
-BOOST_AUTO_TEST_CASE(NonDLowDiscrepancySampling_check_correlated_distributions)
+BOOST_AUTO_TEST_CASE(NonDLowDiscrepancySampling_sample_correlated_distributions)
 {
-  // Make sure an exception is thrown instead of an exit code
-  Dakota::abort_mode = Dakota::ABORT_THROWS;
-
   // Example dakota input specification
   char dakota_input[] =
     "environment \n"
@@ -367,15 +364,16 @@ BOOST_AUTO_TEST_CASE(NonDLowDiscrepancySampling_check_correlated_distributions)
     "method \n"
     "  sampling \n"
     "    sample_type low_discrepancy \n"
-    "    samples 4 \n"
-    "    rank_1_lattice no_random_shift \n"
+    "    samples = 10000 \n"
+    "    seed = 2023 \n"
+    "    rank_1_lattice \n"
     "variables \n"
     "  normal_uncertain = 2 \n"
-    "  means = 0.0 0.0 \n"
-    "  std_deviations = 1.0 1.0 \n"
+    "    means = 0.0 0.0 \n"
+    "    std_deviations = 1.0 1.0 \n"
     "    uncertain_correlation_matrix \n"
-    "    1.0 0.5 \n"
-    "    0.5 1.0 \n"
+    "      1.0 0.9  \n"
+    "      0.9 1.0 \n"
     "interface \n"
     "    analysis_drivers = 'genz' \n"
     "    analysis_components = 'cp1' \n"
@@ -389,12 +387,52 @@ BOOST_AUTO_TEST_CASE(NonDLowDiscrepancySampling_check_correlated_distributions)
   std::shared_ptr<Dakota::LibraryEnvironment> p_env(Dakota::Opt_TPL_Test::create_env(dakota_input));
   Dakota::LibraryEnvironment& env = *p_env;
 
-  // Check that correlated random variables throws an exception
-  Dakota::RealMatrix points(2, 1);
-  BOOST_CHECK_THROW(
-    env.execute(),
-    std::system_error
+  // Execute the environment
+  env.execute();
+
+  // Read in the tabular output file
+  const std::string tabular_data_name = "samples.dat";
+  Dakota::RealMatrix samples;
+  int NB_OF_SAMPLES = 10000;
+  Dakota::TabularIO::read_data_tabular(
+    tabular_data_name, "", samples, NB_OF_SAMPLES, 3, Dakota::TABULAR_NONE, true
   );
+
+  // Compute mean values
+  double m1 = 0;
+  double m2 = 0;
+  for ( size_t j = 0; j < NB_OF_SAMPLES; j++ )
+  {
+    m1 += samples[0][j] / NB_OF_SAMPLES;
+    m2 += samples[1][j] / NB_OF_SAMPLES;
+  }
+
+  // Compute standard deviations
+  double s1 = 0;
+  double s2 = 0;
+  for ( size_t j = 0; j < NB_OF_SAMPLES; j++ )
+  {
+    s1 += (samples[0][j] - m1)*(samples[0][j] - m1);
+    s2 += (samples[1][j] - m2)*(samples[1][j] - m2);
+  }
+  s1 = std::sqrt(s1 / (NB_OF_SAMPLES - 1));
+  s2 = std::sqrt(s2 / (NB_OF_SAMPLES - 1));
+
+  // Compute covariance
+  double c = 0;
+  for ( size_t j = 0; j < NB_OF_SAMPLES; j++ )
+  {
+    c += (samples[0][j] - m1)*(samples[1][j] - m2);
+  }
+  c /= NB_OF_SAMPLES - 1;
+
+  // Check values
+  double TOL = 1e-3;
+  BOOST_CHECK_SMALL(std::abs(m1 - 0), TOL);
+  BOOST_CHECK_SMALL(std::abs(m2 - 0), TOL);
+  BOOST_CHECK_SMALL(std::abs(s1 - 1), TOL);
+  BOOST_CHECK_SMALL(std::abs(s2 - 1), TOL);
+  BOOST_CHECK_SMALL(std::abs(c - 0.9), TOL);
 }
 
 // +-------------------------------------------------------------------------+

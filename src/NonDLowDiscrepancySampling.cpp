@@ -19,12 +19,11 @@
 #include "Rank1Lattice.hpp"
 #include "DigitalNet.hpp"
 
+#include <boost/math/special_functions/erf.hpp>
+
 namespace Dakota {
 
 /// Default constructor
-/// NOTE: this class was templated on the low-discrepancy sequence type, but
-/// removed this to be (1) more in line with the other 'NonDSampling' classes
-/// and (2) more convenient in 'DakotaIterator' (the keyword parsing file)
 NonDLowDiscrepancySampling::NonDLowDiscrepancySampling(
   ProblemDescDB& problem_db,
   Model& model
@@ -260,22 +259,46 @@ void NonDLowDiscrepancySampling::transform(
   const RealVector upper(Teuchos::View, plus_one, numParams);
   scale(lower, upper, sample_matrix); // transform from [0, 1) to [-1, 1)
 
-  /// Source model has uncorrelated standard uniform random variables
-  Model source_model;
-  source_model.assign_rep(
-    std::make_shared<ProbabilityTransformModel>(model, STD_UNIFORM_U)
-  );
+  /// If correlated, tranform samples to standard normal first
+  if ( model.multivariate_distribution().correlation() )
+  {
+    int numRows = sample_matrix.numRows();
+    int numCols = sample_matrix.numCols();
+    for (int row = 0; row < numRows; row++)
+    {
+      for (int col = 0; col < numCols; col++)
+      {
+        // Note: `sample_matrix` already contains samples in [-1, 1]
+        sample_matrix(row, col) = std::sqrt(2) * boost::math::erf_inv(sample_matrix(row, col));
+      }
+    }
 
-  /// Transform samples using Nataf transformation (component-wise inverse CDF)
-  /// NOTE: I believe this should be able to handle correlated random variables
-  /// as well, but that doesn't seem to work right now (the distributions 
-  /// appear distorted)
-  /// I've added a check in 'get_parameter_sets' to detect correlations, and to
-  /// throw an error if correlated random variables are requested
-  Pecos::ProbabilityTransformation& nataf = 
-    source_model.probability_transformation();
-  transform_samples(nataf, sample_matrix, model.continuous_variable_ids(), 
-    model.continuous_variable_ids(), false);
+    /// Source model has uncorrelated standard normal random variables
+    Model uSpaceModel;
+    uSpaceModel.assign_rep(
+      std::make_shared<ProbabilityTransformModel>(model, STD_NORMAL_U)
+    );
+
+    /// Transform samples using Nataf transformation (component-wise inverse CDF)
+    Pecos::ProbabilityTransformation& nataf = 
+      uSpaceModel.probability_transformation();
+    transform_samples(nataf, sample_matrix, model.continuous_variable_ids(), 
+      model.continuous_variable_ids(), false);
+  }
+  else // If uncorrelated, directly apply the transform
+  {
+    /// Source model has uncorrelated standard uniform random variables
+    Model uSpaceModel;
+    uSpaceModel.assign_rep(
+      std::make_shared<ProbabilityTransformModel>(model, STD_UNIFORM_U)
+    );
+
+    /// Transform samples using Nataf transformation (component-wise inverse CDF)
+    Pecos::ProbabilityTransformation& nataf = 
+      uSpaceModel.probability_transformation();
+    transform_samples(nataf, sample_matrix, model.continuous_variable_ids(), 
+      model.continuous_variable_ids(), false);
+  } 
 }
 
 /// Function to scale a given sample matrix from [0, 1) to the given lower and
@@ -311,32 +334,7 @@ void NonDLowDiscrepancySampling::check_support(
   Pecos::MultivariateDistribution& mv_dist
 )
 {
-  check_correlated(mv_dist);
-  check_has_discrete_random_variables(mv_dist);
-}
-
-/// Check for correlations and throw an error if variables are correlated
-/// NOTE: I think Nataf transformation (i.e., 'transform_samples' in 
-/// 'NonDSampling') can only deal with uncorrelated random variables?
-void NonDLowDiscrepancySampling::check_correlated(
-  Pecos::MultivariateDistribution& mv_dist
-)
-{
-  if ( mv_dist.correlation() )
-  {
-    Cerr << "\nError: low-discrepancy sampling does not support correlated "
-      << "random variables." << std::endl;
-    abort_handler(METHOD_ERROR);  
-  }
-}
-
-/// Check for discrete random variables and throw an error if any variable is
-/// discrete
-void NonDLowDiscrepancySampling::check_has_discrete_random_variables(
-  Pecos::MultivariateDistribution& mv_dist
-)
-{
-  /// Loop over each variable and check if its typy is allowed
+  /// Loop over each variable and check if its type is allowed
   /// TODO: is there a better way to do this, e.g., variable.is_discrete()?
   std::vector<Pecos::RandomVariable>& variables = mv_dist.random_variables();
   for ( Pecos::RandomVariable variable : variables )

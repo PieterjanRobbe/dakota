@@ -138,17 +138,6 @@ private:
   void check_support(
     Pecos::MultivariateDistribution& mv_dist
   );
-
-  /// Check for correlations and throw an error if variables are correlated
-  void check_correlated(
-    Pecos::MultivariateDistribution& mv_dist
-  );
-
-  /// Check for discrete random variables and throw an error if any variable is
-  /// discrete
-  void check_has_discrete_random_variables(
-    Pecos::MultivariateDistribution& mv_dist
-  );
   
 };
 
